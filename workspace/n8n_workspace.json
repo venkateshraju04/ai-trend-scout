@@ -1,0 +1,86 @@
+{
+  "name": "ai-trend-scout",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 3
+            },
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-160, -20],
+      "id": "80a16a9d-190e-4b06-b413-1f2c4a8ea456",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://gtrend.yapie.me/repositories?since=daily",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [60, -20],
+      "id": "9eb78915-45de-4d9d-9b44-1e0c31b36191",
+      "name": "HTTP Request",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  title: $json.name,\n  description: $json.description || \"No description provided\",\n  stars: $json.stars,\n  language: $json.language || \"Unknown\",\n  author: $json.builtBy?.[0]?.username || \"Unknown\",\n  repoUrl: $json.url\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [280, -20],
+      "id": "8a4ce9d6-5a1e-40ab-afd5-997eb3404a0c",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [[]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e9c94a2b-adbf-463a-a4ca-920ea279af1f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "50d7a6af96a39b615bbaffa2517e092b85710baccfb680139f67949990b9009b"
+  },
+  "id": "KROSqVzAqFEXImiF",
+  "tags": []
+}

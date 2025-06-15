@@ -14,7 +14,7 @@
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-300, 0],
+      "position": [-600, 0],
       "id": "80a16a9d-190e-4b06-b413-1f2c4a8ea456",
       "name": "Schedule Trigger"
     },
@@ -25,7 +25,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [100, 180],
+      "position": [80, 180],
       "id": "8414a3f1-da8a-40d2-b2d7-469801d31ce1",
       "name": "hacker news api"
     },
@@ -38,7 +38,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [100, 0],
+      "position": [80, 0],
       "id": "9eb78915-45de-4d9d-9b44-1e0c31b36191",
       "name": "github trending api",
       "alwaysOutputData": false
@@ -85,65 +85,14 @@
     },
     {
       "parameters": {
-        "jsCode": "const posts = $json.data.children;\n\nreturn posts.map(post => {\n  const data = post.data;\n\n  return {\n    json: {\n      title: data.title,\n      url: `https://reddit.com${data.permalink}`,\n      upvotes: data.ups,\n      author: data.author,\n      subreddit: data.subreddit,\n    }\n  };\n});\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [300, -280],
-      "id": "670d196d-8d3d-496e-9aeb-b546e39bcca4",
-      "name": "reddit posts"
-    },
-    {
-      "parameters": {
-        "jsCode": "const posts = $json.hits.slice(0, 10);\n\nreturn posts.map(post => ({\n  json: {\n    title: post.title || post.story_title || \"No title\",\n    url: post.url || post.story_url || `https://news.ycombinator.com/item?id=${post.objectID}`,\n    points: post.points || 0,\n    author: post.author || \"Unknown\",\n  }\n}));\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [280, 180],
-      "id": "d1a94e20-805f-4202-9d6c-02e92dc9ddd4",
-      "name": "hacker news posts1"
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "return {\n  title: $json.name,\n  description: $json.description || \"No description provided\",\n  stars: $json.stars,\n  language: $json.language || \"Unknown\",\n  author: $json.builtBy?.[0]?.username || \"Unknown\",\n  repoUrl: $json.url\n};\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [280, 0],
-      "id": "8a4ce9d6-5a1e-40ab-afd5-997eb3404a0c",
-      "name": "github posts"
-    },
-    {
-      "parameters": {
         "url": "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=US&videoCategoryId=28&maxResults=5&key=AIzaSyBsHAqHKDIcp7DAAC_LT9U1ExNKy4z6lZQ",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [100, 420],
+      "position": [80, 420],
       "id": "9e5bcde8-33a1-4c44-ac3d-fb966e296904",
       "name": "Yt videos"
-    },
-    {
-      "parameters": {
-        "jsCode": "const videos = $json.items;\n\nreturn videos.map(video => {\n  const snippet = video.snippet;\n  const videoId = video.id.videoId;\n\n  return {\n    json: {\n      title: snippet.title,\n      url: `https://www.youtube.com/watch?v=${videoId}`,\n      channel: snippet.channelTitle,\n      description: snippet.description,\n    }\n  };\n});\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [280, 420],
-      "id": "37d15f0f-e6c6-4710-ab54-2a355d533204",
-      "name": "yt videos"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5);\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [320, -660],
-      "id": "5fe037c0-23d4-4dfd-8c4d-0de0ab8d2f48",
-      "name": "Code"
     },
     {
       "parameters": {
@@ -176,7 +125,7 @@
       },
       "type": "n8n-nodes-base.rssFeedRead",
       "typeVersion": 1.1,
-      "position": [60, 660],
+      "position": [80, 660],
       "id": "9652eba8-6846-4686-b857-bbd77c0d0e7d",
       "name": "dev.to AI"
     },
@@ -193,13 +142,108 @@
     },
     {
       "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      date: new Date().toISOString(),\n      medium: $items(\"Medium\"),\n      \n      reddit: $items(\"Reddit\"),\n      github: $items(\"GitHub\"),\n      hackernews: $items(\"Hacker News\"),\n      youtube: $items(\"YouTube\"),\n      devto: $items(\"Dev.to\")\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1380, 20],
+      "id": "18cdde1f-9bab-4f1a-82d9-d4e5d93d01fc",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $json.data.children;\n\nreturn posts.map(post => {\n  const data = post.data;\n\n  return {\n    json: {\n      title: data.title,\n      url: `https://reddit.com${data.permalink}`,\n      upvotes: data.ups,\n      author: data.author,\n      subreddit: data.subreddit,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, -300],
+      "id": "670d196d-8d3d-496e-9aeb-b546e39bcca4",
+      "name": "Reddit"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  title: $json.name,\n  description: $json.description || \"No description provided\",\n  stars: $json.stars,\n  language: $json.language || \"Unknown\",\n  author: $json.builtBy?.[0]?.username || \"Unknown\",\n  repoUrl: $json.url\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 0],
+      "id": "8a4ce9d6-5a1e-40ab-afd5-997eb3404a0c",
+      "name": "GitHub"
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $json.hits.slice(0, 10);\n\nreturn posts.map(post => ({\n  json: {\n    title: post.title || post.story_title || \"No title\",\n    url: post.url || post.story_url || `https://news.ycombinator.com/item?id=${post.objectID}`,\n    points: post.points || 0,\n    author: post.author || \"Unknown\",\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 180],
+      "id": "d1a94e20-805f-4202-9d6c-02e92dc9ddd4",
+      "name": "Hacker News"
+    },
+    {
+      "parameters": {
+        "jsCode": "const videos = $json.items;\n\nreturn videos.map(video => {\n  const snippet = video.snippet;\n  const videoId = video.id.videoId;\n\n  return {\n    json: {\n      title: snippet.title,\n      url: `https://www.youtube.com/watch?v=${videoId}`,\n      channel: snippet.channelTitle,\n      description: snippet.description,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 420],
+      "id": "37d15f0f-e6c6-4710-ab54-2a355d533204",
+      "name": "YouTube"
+    },
+    {
+      "parameters": {
         "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5);\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [340, 740],
+      "position": [520, 740],
       "id": "56fa0c14-1cc7-4081-a514-2178a3742660",
-      "name": "Code1"
+      "name": "Dev.to"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, -620],
+      "id": "5fe037c0-23d4-4dfd-8c4d-0de0ab8d2f48",
+      "name": "Medium"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [320, -620],
+      "id": "f52b523d-b3f4-48cc-b370-2f6bf0569b05",
+      "name": "Merge"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [320, -300],
+      "id": "a4357bc8-5921-4fb4-a226-3a79a9b33b31",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [320, 740],
+      "id": "37a251a8-c4da-407e-b477-9ef4b62cf8aa",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [940, -40],
+      "id": "943168a4-09fa-4715-85b0-1570799aa120",
+      "name": "Merge3"
     }
   ],
   "pinData": {},
@@ -259,7 +303,7 @@
       "main": [
         [
           {
-            "node": "hacker news posts1",
+            "node": "Hacker News",
             "type": "main",
             "index": 0
           }
@@ -270,7 +314,7 @@
       "main": [
         [
           {
-            "node": "github posts",
+            "node": "GitHub",
             "type": "main",
             "index": 0
           }
@@ -281,9 +325,9 @@
       "main": [
         [
           {
-            "node": "reddit posts",
+            "node": "Merge1",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -292,21 +336,18 @@
       "main": [
         [
           {
-            "node": "reddit posts",
+            "node": "Merge1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "github posts": {
-      "main": [[]]
-    },
     "Yt videos": {
       "main": [
         [
           {
-            "node": "yt videos",
+            "node": "YouTube",
             "type": "main",
             "index": 0
           }
@@ -317,9 +358,9 @@
       "main": [
         [
           {
-            "node": "Code",
+            "node": "Merge",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
@@ -328,7 +369,7 @@
       "main": [
         [
           {
-            "node": "Code",
+            "node": "Merge",
             "type": "main",
             "index": 0
           }
@@ -339,7 +380,7 @@
       "main": [
         [
           {
-            "node": "Code1",
+            "node": "Merge2",
             "type": "main",
             "index": 0
           }
@@ -350,7 +391,117 @@
       "main": [
         [
           {
-            "node": "Code1",
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "GitHub": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Reddit": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Hacker News": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "YouTube": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Dev.to": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Medium": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Medium",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Dev.to",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Code2",
             "type": "main",
             "index": 0
           }
@@ -362,7 +513,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "868c958a-839d-4816-ba31-3f0ac4bf85f9",
+  "versionId": "3bf76702-1016-4cb1-a18a-5a04fbe3463e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "50d7a6af96a39b615bbaffa2517e092b85710baccfb680139f67949990b9009b"

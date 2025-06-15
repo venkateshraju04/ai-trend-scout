@@ -193,7 +193,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5);\n"
+        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5).map(post => {\n  return {\n    json: {\n      title: post.json.title || \"Untitled\",\n      creator: post.json.creator || post.json.author || \"Unknown\",\n      link: post.json.url || post.json.link || \"#\"\n    }\n  };\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -203,7 +203,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5);\n"
+        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\nreturn allPosts.slice(0, 5).map(post => {\n  return {\n    json: {\n      title: post.json.title || \"Untitled\",\n      creator: post.json.creator || post.json.author || \"Unknown\",\n      link: post.json.url || post.json.link || \"#\"\n    }\n  };\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -249,6 +249,7 @@
       "parameters": {
         "operation": "toJson",
         "options": {
+          "format": true,
           "fileName": "latestContent.json"
         }
       },
@@ -264,16 +265,28 @@
         "url": "https://givtazogkvaoooxtpkfm.supabase.co/storage/v1/object/trend-scout/latestContent.json",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpdnRhem9na3Zhb29veHRwa2ZtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTk4MzYyMywiZXhwIjoyMDY1NTU5NjIzfQ.bnOXobuZ9xppuc5hsf5s4lHh8fQ6huAq-tk2nOsmjnw"
+            }
+          ]
+        },
         "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "RAW",
-        "body": "data",
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [1820, 20],
-      "id": "48ec916c-5505-4d7c-a087-83d964697cf1",
+      "id": "14b198de-4d54-4172-b561-be4b1fa22108",
       "name": "HTTP Request",
       "credentials": {
         "supabaseApi": {
@@ -572,7 +585,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "721a6fe8-c9ba-475d-a8b5-f401944d2063",
+  "versionId": "3c904abb-0630-4ffd-9753-1c30db409a7f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "50d7a6af96a39b615bbaffa2517e092b85710baccfb680139f67949990b9009b"

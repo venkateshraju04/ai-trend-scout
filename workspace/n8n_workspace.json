@@ -244,6 +244,43 @@
       "position": [940, -40],
       "id": "943168a4-09fa-4715-85b0-1570799aa120",
       "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {
+          "fileName": "latestContent.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1600, 20],
+      "id": "61aa872f-2a7c-4586-92c4-8508d46c252a",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://givtazogkvaoooxtpkfm.supabase.co/storage/v1/object/trend-scout/latestContent.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "RAW",
+        "body": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1820, 20],
+      "id": "48ec916c-5505-4d7c-a087-83d964697cf1",
+      "name": "HTTP Request",
+      "credentials": {
+        "supabaseApi": {
+          "id": "wmOEnnjJZEnn2d9s",
+          "name": "Supabase account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -507,13 +544,35 @@
           }
         ]
       ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "3bf76702-1016-4cb1-a18a-5a04fbe3463e",
+  "versionId": "721a6fe8-c9ba-475d-a8b5-f401944d2063",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "50d7a6af96a39b615bbaffa2517e092b85710baccfb680139f67949990b9009b"

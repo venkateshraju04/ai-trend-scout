@@ -14,7 +14,7 @@
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-160, -20],
+      "position": [-300, 0],
       "id": "80a16a9d-190e-4b06-b413-1f2c4a8ea456",
       "name": "Schedule Trigger"
     },
@@ -121,7 +121,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [0, 440],
+      "position": [100, 420],
       "id": "9e5bcde8-33a1-4c44-ac3d-fb966e296904",
       "name": "Yt videos"
     },
@@ -131,9 +131,75 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 440],
+      "position": [280, 420],
       "id": "37d15f0f-e6c6-4710-ab54-2a355d533204",
       "name": "yt videos"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, -660],
+      "id": "5fe037c0-23d4-4dfd-8c4d-0de0ab8d2f48",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "url": "https://medium.com/feed/tag/ai",
+        "options": {
+          "ignoreSSL": false
+        }
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [80, -540],
+      "id": "fb4a8948-f84a-4c90-b9c5-fc61ba5ce798",
+      "name": "medium ai"
+    },
+    {
+      "parameters": {
+        "url": "https://medium.com/feed/tag/programming",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [80, -720],
+      "id": "c537c929-1f71-43a3-96f5-fa3643166027",
+      "name": "medium programming"
+    },
+    {
+      "parameters": {
+        "url": "https://dev.to/feed/tag/ai",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [60, 660],
+      "id": "9652eba8-6846-4686-b857-bbd77c0d0e7d",
+      "name": "dev.to AI"
+    },
+    {
+      "parameters": {
+        "url": "https://dev.to/feed/tag/programming",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [80, 840],
+      "id": "da9f149e-0650-4d74-b431-fd4d489109cd",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5);\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [340, 740],
+      "id": "56fa0c14-1cc7-4081-a514-2178a3742660",
+      "name": "Code1"
     }
   ],
   "pinData": {},
@@ -163,6 +229,26 @@
           },
           {
             "node": "Yt videos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "medium ai",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "medium programming",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "dev.to AI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RSS Read",
             "type": "main",
             "index": 0
           }
@@ -226,13 +312,57 @@
           }
         ]
       ]
+    },
+    "medium ai": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "medium programming": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "dev.to AI": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Read": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "505f9f95-23c1-4ad2-a54a-f8f6b154f341",
+  "versionId": "868c958a-839d-4816-ba31-3f0ac4bf85f9",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "50d7a6af96a39b615bbaffa2517e092b85710baccfb680139f67949990b9009b"

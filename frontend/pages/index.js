@@ -6,7 +6,12 @@ export default function Home() {
 
   useEffect(() => {
     fetch(
-      "https://givtazogkvaoooxtpkfm.supabase.co/storage/v1/object/public/trend-scout//latestContent.json"
+      "https://givtazogkvaoooxtpkfm.supabase.co/storage/v1/object/public/trend-scout//latestContent.json",
+      {
+        headers: {
+          "Cache-Control": "no-cache",
+        },
+      }
     )
       .then((res) => res.json())
       .then((data) => {

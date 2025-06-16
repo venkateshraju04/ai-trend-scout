@@ -183,7 +183,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const videos = $json.items;\n\nreturn videos.map(video => {\n  const snippet = video.snippet;\n  const videoId = video.id.videoId;\n\n  return {\n    json: {\n      title: snippet.title,\n      url: `https://www.youtube.com/watch?v=${videoId}`,\n      channel: snippet.channelTitle,\n      description: snippet.description,\n    }\n  };\n});\n"
+        "jsCode": "const videos = $json.items;\n\nreturn videos.map(video => {\n  const snippet = video.snippet;\n  const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;\n\n  return {\n    json: {\n      title: snippet.title,\n      videoId: videoId,\n      url: `https://www.youtube.com/watch?v=${videoId}`,\n      channel: snippet.channelTitle,\n      description: snippet.description,\n    }\n  };\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -585,7 +585,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "3c904abb-0630-4ffd-9753-1c30db409a7f",
+  "versionId": "97084c83-5fb5-4fef-b373-45d7c11a2b1f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "50d7a6af96a39b615bbaffa2517e092b85710baccfb680139f67949990b9009b"

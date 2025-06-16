@@ -96,52 +96,6 @@
     },
     {
       "parameters": {
-        "url": "https://medium.com/feed/tag/ai",
-        "options": {
-          "ignoreSSL": false
-        }
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.1,
-      "position": [80, -540],
-      "id": "fb4a8948-f84a-4c90-b9c5-fc61ba5ce798",
-      "name": "medium ai"
-    },
-    {
-      "parameters": {
-        "url": "https://medium.com/feed/tag/programming",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.1,
-      "position": [80, -720],
-      "id": "c537c929-1f71-43a3-96f5-fa3643166027",
-      "name": "medium programming"
-    },
-    {
-      "parameters": {
-        "url": "https://dev.to/feed/tag/ai",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.1,
-      "position": [80, 660],
-      "id": "9652eba8-6846-4686-b857-bbd77c0d0e7d",
-      "name": "dev.to AI"
-    },
-    {
-      "parameters": {
-        "url": "https://dev.to/feed/tag/programming",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.1,
-      "position": [80, 840],
-      "id": "da9f149e-0650-4d74-b431-fd4d489109cd",
-      "name": "RSS Read"
-    },
-    {
-      "parameters": {
         "jsCode": "return [\n  {\n    json: {\n      date: new Date().toISOString(),\n      medium: $items(\"Medium\"),\n      \n      reddit: $items(\"Reddit\"),\n      github: $items(\"GitHub\"),\n      hackernews: $items(\"Hacker News\"),\n      youtube: $items(\"YouTube\"),\n      devto: $items(\"Dev.to\")\n    }\n  }\n];\n"
       },
       "type": "n8n-nodes-base.code",
@@ -193,11 +147,11 @@
     },
     {
       "parameters": {
-        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5).map(post => {\n  return {\n    json: {\n      title: post.json.title || \"Untitled\",\n      creator: post.json.creator || post.json.author || \"Unknown\",\n      link: post.json.url || post.json.link || \"#\"\n    }\n  };\n});\n"
+        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5).map(post => {\n  return {\n    json: {\n      title: post.json.title || \"Untitled\",\n      creator: post.json.user.username || \"Unknown\",\n      link: post.json.url || post.json.link || \"#\",\n      image: post.cover_image || post.social_image,\n    }\n  };\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [520, 740],
+      "position": [480, 680],
       "id": "56fa0c14-1cc7-4081-a514-2178a3742660",
       "name": "Dev.to"
     },
@@ -215,25 +169,9 @@
       "parameters": {},
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [320, -620],
-      "id": "f52b523d-b3f4-48cc-b370-2f6bf0569b05",
-      "name": "Merge"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
       "position": [320, -300],
       "id": "a4357bc8-5921-4fb4-a226-3a79a9b33b31",
       "name": "Merge1"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [320, 740],
-      "id": "37a251a8-c4da-407e-b477-9ef4b62cf8aa",
-      "name": "Merge2"
     },
     {
       "parameters": {
@@ -294,6 +232,49 @@
           "name": "Supabase account"
         }
       }
+    },
+    {
+      "parameters": {
+        "url": "https://medium.com/feed/tag/ai",
+        "options": {
+          "ignoreSSL": false
+        }
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [80, -540],
+      "id": "fb4a8948-f84a-4c90-b9c5-fc61ba5ce798",
+      "name": "medium ai"
+    },
+    {
+      "parameters": {
+        "url": "https://medium.com/feed/tag/programming",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.1,
+      "position": [80, -720],
+      "id": "c537c929-1f71-43a3-96f5-fa3643166027",
+      "name": "medium programming"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [320, -620],
+      "id": "f52b523d-b3f4-48cc-b370-2f6bf0569b05",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "url": "https://dev.to/api/articles?top=3&per_page=5",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [100, 680],
+      "id": "7f128fb8-6160-428b-a9a0-d683a037f964",
+      "name": "HTTP Request1"
     }
   ],
   "pinData": {},
@@ -337,12 +318,7 @@
             "index": 0
           },
           {
-            "node": "dev.to AI",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "RSS Read",
+            "node": "HTTP Request1",
             "type": "main",
             "index": 0
           }
@@ -400,50 +376,6 @@
             "node": "YouTube",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "medium ai": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "medium programming": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "dev.to AI": {
-      "main": [
-        [
-          {
-            "node": "Merge2",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "RSS Read": {
-      "main": [
-        [
-          {
-            "node": "Merge2",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
@@ -514,33 +446,11 @@
         ]
       ]
     },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Medium",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Merge1": {
       "main": [
         [
           {
             "node": "Reddit",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge2": {
-      "main": [
-        [
-          {
-            "node": "Dev.to",
             "type": "main",
             "index": 0
           }
@@ -579,13 +489,57 @@
           }
         ]
       ]
+    },
+    "medium programming": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Medium",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "medium ai": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Dev.to",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "97084c83-5fb5-4fef-b373-45d7c11a2b1f",
+  "versionId": "95603ce9-f9fa-4333-893a-d99d1b26a9c1",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "50d7a6af96a39b615bbaffa2517e092b85710baccfb680139f67949990b9009b"

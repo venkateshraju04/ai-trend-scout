@@ -7,8 +7,7 @@
           "interval": [
             {
               "triggerAtHour": 3
-            },
-            {}
+            }
           ]
         }
       },
@@ -96,7 +95,7 @@
     },
     {
       "parameters": {
-        "jsCode": "return [\n  {\n    json: {\n      date: new Date().toISOString(),\n      medium: $items(\"Medium\"),\n      \n      reddit: $items(\"Reddit\"),\n      github: $items(\"GitHub\"),\n      hackernews: $items(\"Hacker News\"),\n      youtube: $items(\"YouTube\"),\n      devto: $items(\"Dev.to\")\n    }\n  }\n];\n"
+        "jsCode": "return [\n  {\n    json: {\n      date: new Date().toISOString(),      \n      reddit: $items(\"Reddit\"),\n      github: $items(\"GitHub\"),\n      hackernews: $items(\"Hacker News\"),\n      youtube: $items(\"YouTube\"),\n      devto: $items(\"Dev.to\")\n    }\n  }\n];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -117,7 +116,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "return {\n  title: $json.name,\n  description: $json.description || \"No description provided\",\n  stars: $json.stars,\n  language: $json.language || \"Unknown\",\n  author: $json.builtBy?.[0]?.username || \"Unknown\",\n  repoUrl: $json.url\n};\n"
+        "jsCode": "const urlParts = $json.url?.split(\"github.com/\")[1];\n\nreturn {\n  title: urlParts ? `${urlParts}` : \"github.com/unknown/repo\",\n  description: $json.description || \"No description provided\",\n  stars: $json.stars,\n  language: $json.language || \"Unknown\",\n  author: $json.builtBy?.[0]?.username || \"Unknown\",\n  repoUrl: $json.url\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -147,23 +146,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5).map(post => {\n  return {\n    json: {\n      title: post.json.title || \"Untitled\",\n      creator: post.json.user.username || \"Unknown\",\n      link: post.json.url || post.json.link || \"#\",\n      image: post.cover_image || post.social_image,\n    }\n  };\n});\n"
+        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5).map(post => {\n  return {\n    json: {\n      title: post.json.title || \"Untitled\",\n      creator: post.json.user.username || \"Unknown\",\n      link: post.json.url || post.json.link || \"#\",\n      image: post.json.cover_image || post.json.social_image,\n    }\n  };\n});\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [480, 680],
       "id": "56fa0c14-1cc7-4081-a514-2178a3742660",
       "name": "Dev.to"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Sort by published date (newest first)\nallPosts.sort((a, b) => {\n  const dateA = new Date(a.json.date);\n  const dateB = new Date(b.json.date);\n  return dateB - dateA;\n});\n\nreturn allPosts.slice(0, 5).map(post => {\n  return {\n    json: {\n      title: post.json.title || \"Untitled\",\n      creator: post.json.creator || post.json.author || \"Unknown\",\n      link: post.json.url || post.json.link || \"#\"\n    }\n  };\n});\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [500, -620],
-      "id": "5fe037c0-23d4-4dfd-8c4d-0de0ab8d2f48",
-      "name": "Medium"
     },
     {
       "parameters": {},
@@ -175,7 +164,7 @@
     },
     {
       "parameters": {
-        "numberInputs": 6
+        "numberInputs": 5
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
@@ -235,38 +224,6 @@
     },
     {
       "parameters": {
-        "url": "https://medium.com/feed/tag/ai",
-        "options": {
-          "ignoreSSL": false
-        }
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.1,
-      "position": [80, -540],
-      "id": "fb4a8948-f84a-4c90-b9c5-fc61ba5ce798",
-      "name": "medium ai"
-    },
-    {
-      "parameters": {
-        "url": "https://medium.com/feed/tag/programming",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.rssFeedRead",
-      "typeVersion": 1.1,
-      "position": [80, -720],
-      "id": "c537c929-1f71-43a3-96f5-fa3643166027",
-      "name": "medium programming"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [320, -620],
-      "id": "f52b523d-b3f4-48cc-b370-2f6bf0569b05",
-      "name": "Merge"
-    },
-    {
-      "parameters": {
         "url": "https://dev.to/api/articles?top=3&per_page=5",
         "options": {}
       },
@@ -304,16 +261,6 @@
           },
           {
             "node": "Yt videos",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "medium ai",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "medium programming",
             "type": "main",
             "index": 0
           },
@@ -430,17 +377,6 @@
           {
             "node": "Merge3",
             "type": "main",
-            "index": 5
-          }
-        ]
-      ]
-    },
-    "Medium": {
-      "main": [
-        [
-          {
-            "node": "Merge3",
-            "type": "main",
             "index": 0
           }
         ]
@@ -490,39 +426,6 @@
         ]
       ]
     },
-    "medium programming": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Medium",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "medium ai": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
     "HTTP Request1": {
       "main": [
         [
@@ -539,7 +442,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "95603ce9-f9fa-4333-893a-d99d1b26a9c1",
+  "versionId": "6ca1c66e-53f0-42c6-bf7d-cbf74bc2d899",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "50d7a6af96a39b615bbaffa2517e092b85710baccfb680139f67949990b9009b"

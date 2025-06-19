@@ -84,7 +84,7 @@
     },
     {
       "parameters": {
-        "url": "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=US&videoCategoryId=28&maxResults=5&key=AIzaSyBsHAqHKDIcp7DAAC_LT9U1ExNKy4z6lZQ",
+        "url": "{{$env.YOUTUBE_API_KEY}}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -201,7 +201,7 @@
             },
             {
               "name": "Authorization",
-              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdpdnRhem9na3Zhb29veHRwa2ZtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTk4MzYyMywiZXhwIjoyMDY1NTU5NjIzfQ.bnOXobuZ9xppuc5hsf5s4lHh8fQ6huAq-tk2nOsmjnw"
+              "value": "Bearer {{$env.SUPABASE_SERVICE_ROLE_KEY}}"
             }
           ]
         },

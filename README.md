@@ -83,5 +83,5 @@ npm run dev
     WEBHOOK_URL=https://<project-name>.onrender.com
     N8N_EDITOR_BASE_URL=https://<project-name>.onrender.com
    ```
-   5. Setup an account and import the n8n_workspace.json file available in the root directory.
-   6. Setup essential api keys and activate your workflow.
+5. Setup an account and import the n8n_workspace.json file available in the root directory.
+6. Setup essential api keys and activate your workflow.

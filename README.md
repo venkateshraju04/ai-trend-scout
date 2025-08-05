@@ -1,9 +1,9 @@
 # AI TrendScout
  ### Check out the webpage [here](https://ai-trend-scout.venkateshraju.me/)
  
-**AI TrendScout** automatically tracks the latest trending topics from across the web — including **GitHub**, **Hacker News**, **YouTube**, and **Dev.to** — and displays them in one beautiful, easy-to-digest dashboard.
+**AI TrendScout** automatically tracks the latest trending topics from across the web including **GitHub**, **Hacker News**, **YouTube**, and **Dev.to**  and displays them in one beautiful, easy-to-digest dashboard.
 
-Whether you're a developer, tech enthusiast, or startup founder, AI TrendScout keeps you in the loop — no noise, just signal.
+Whether you're a developer, tech enthusiast, or startup founder, AI TrendScout keeps you in the loop. No noise, just signal.
 
 ---
 
@@ -40,11 +40,11 @@ Whether you're a developer, tech enthusiast, or startup founder, AI TrendScout k
 
 ## 🛠️ Tech Stack
 
-- 🤖 **n8n** for workflow automation  
-- 🌐 **Supabase** for storage & DB  
-- ⚛️ **Next.js** frontend  
-- 🧾 **Render** for n8n workflow deployment  
-- 🧾 **Vercel** for webpage deployment  
+-  **n8n** for workflow automation  
+-  **Supabase** for storage & DB  
+-  **Next.js** frontend  
+-  **AWS EC2** for n8n workflow deployment  
+-  **Vercel** for webpage deployment  
 
 ---
 
@@ -67,7 +67,7 @@ npm install
 npm run dev
 ```
 4. Deploy n8n workflow
-   - Create a new web service using existing image or public git repo of n8n.
+   - Create a new web service using existing n8n docker image or public git repo of n8n.
    - Leave all the settings default.
    - Add the following env variables and deploy.
 

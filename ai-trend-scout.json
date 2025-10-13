@@ -1,0 +1,633 @@
+{
+  "name": "ai-trend-scout",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://hn.algolia.com/api/v1/search?tags=front_page",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 544],
+      "id": "00d02aff-f7b6-4881-8c00-c7eeb73bb5d6",
+      "name": "hacker news api"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/isboyjc/github-trending-api/main/data/daily/all.json",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 368],
+      "id": "5a607341-4c5a-496c-a0ff-94f87f8492af",
+      "name": "github trending api",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "https://oauth.reddit.com/r/programming/top?t=day&limit=10",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "redditOAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 144],
+      "id": "893319da-cb98-4716-aa06-b82316536271",
+      "name": "reddit posts api",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "0Fm4UOraQhGKZvPs",
+          "name": "Reddit account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://oauth.reddit.com/r/technology/top?t=day&limit=10",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "redditOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{}]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 0],
+      "id": "6db20553-a0ab-4d19-9b88-794f9a63e53b",
+      "name": "reddit posts api1",
+      "credentials": {
+        "redditOAuth2Api": {
+          "id": "0Fm4UOraQhGKZvPs",
+          "name": "Reddit account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&regionCode=US&videoCategoryId=28&maxResults=5&key=YOUR_YT_API_KEY",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 784],
+      "id": "817f834d-036c-4fd1-9109-badb15dc0f45",
+      "name": "Yt videos"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      date: new Date().toISOString(),      \n      reddit: $items(\"Reddit\"),\n      github: $items(\"GitHub\"),\n      hackernews: $items(\"Hacker News\"),\n      youtube: $items(\"YouTube\"),\n      devto: $items(\"Dev.to\")\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1312, 384],
+      "id": "ed64d048-616a-4964-9686-fce8e9c1e302",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $json.data.children;\n\nreturn posts.map(post => {\n  const data = post.data;\n\n  return {\n    json: {\n      title: data.title,\n      url: `https://reddit.com${data.permalink}`,\n      upvotes: data.ups,\n      author: data.author,\n      subreddit: data.subreddit,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [432, 64],
+      "id": "a2a13497-e4e7-4083-a7ef-e2806bbc5821",
+      "name": "Reddit"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 1: Access the JSON string from the 'data' key\nconst rawData = items[0].json.data;\n\n// Step 2: Parse the JSON string\nconst parsed = JSON.parse(rawData);\n\n// Step 3: Take top 10 repos\nconst top10 = parsed.items.slice(0, 10).map(item => {\n  const urlParts = item.url?.split(\"github.com/\")[1];\n\n  return {\n    json: {\n      title: urlParts || \"github.com/unknown/repo\",\n      description: item.description || \"No description provided\",\n      stars: item.stars || \"0\",\n      language: item.language || \"Unknown\",\n      author: item.contributors?.[0]?.name || \"Unknown\",\n      repoUrl: item.url\n    }\n  };\n});\n\nreturn top10;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [432, 368],
+      "id": "1c4c8e15-bd58-4ac3-b930-8811ee7da0c1",
+      "name": "GitHub"
+    },
+    {
+      "parameters": {
+        "jsCode": "const posts = $json.hits.slice(0, 10);\n\nreturn posts.map(post => ({\n  json: {\n    title: post.title || post.story_title || \"No title\",\n    url: post.url || post.story_url || `https://news.ycombinator.com/item?id=${post.objectID}`,\n    points: post.points || 0,\n    author: post.author || \"Unknown\",\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [432, 544],
+      "id": "40e355a9-a03c-47fe-b3f8-43d3020be019",
+      "name": "Hacker News"
+    },
+    {
+      "parameters": {
+        "jsCode": "const videos = $json.items;\n\nreturn videos.map(video => {\n  const snippet = video.snippet;\n  const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;\n\n  return {\n    json: {\n      title: snippet.title,\n      videoId: videoId,\n      url: `https://www.youtube.com/watch?v=${videoId}`,\n      channel: snippet.channelTitle,\n      description: snippet.description,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [432, 784],
+      "id": "d1798f55-4be3-4bb6-9c68-a705435d86ab",
+      "name": "YouTube"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine all incoming items from both feeds\nconst allPosts = items;\n\n// Return top 5 posts\nreturn allPosts.slice(0, 5).map(post => {\n  return {\n    json: {\n      title: post.json.title || \"Untitled\",\n      creator: post.json.user.username || \"Unknown\",\n      link: post.json.url || post.json.link || \"#\",\n      image: post.json.cover_image || post.json.social_image,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 1040],
+      "id": "eac4492c-d510-4193-836a-020e9c13f6c4",
+      "name": "Dev.to"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [240, 64],
+      "id": "85ce1a47-dd59-44db-aef4-9d08297b29dd",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [864, 320],
+      "id": "0fa7b28b-db14-449d-a5f0-c5e3059fafee",
+      "name": "Merge3"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {
+          "format": true,
+          "fileName": "latestContent.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1744, 384],
+      "id": "a9e310dc-046f-4553-96ac-55eba7a980ca",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://givtazogkvaoooxtpkfm.supabase.co/storage/v1/object/trend-scout/latestContent.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_ANON_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1968, 384],
+      "id": "fcb5ea05-d75e-4edb-aad0-882ba0e3adfa",
+      "name": "HTTP Request",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yoS5BSXNPXfyuhPZ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://dev.to/api/articles?top=3&per_page=5",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [32, 1040],
+      "id": "82d02a6f-d050-4d8e-8abe-ce1fbc6799de",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json}}",
+        "options": {
+          "systemMessage": "You are a helpful assistant used to summarize the recent trends in developer community. The input to you, is a json file consisting of trending posts from various sites. Make a one paragraph summary of this."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [1168, 800],
+      "id": "93017b07-3829-47cb-8805-713c28280b97",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [1168, 1008],
+      "id": "7ba15a1c-4cbb-4d2c-8066-da97c29706a4",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MBdJGssbyFwX0MeM",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "options": {
+          "format": true,
+          "fileName": "summary"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [1808, 800],
+      "id": "9ee51e5b-b886-4751-a469-db44938575eb",
+      "name": "Convert to File1"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "https://givtazogkvaoooxtpkfm.supabase.co/storage/v1/object/trend-scout/summary",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_SUPABASE_ANON_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2032, 800],
+      "id": "86df721a-c6cd-4180-b0eb-96012aa96ca9",
+      "name": "HTTP Request3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yoS5BSXNPXfyuhPZ",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 23
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-528, 576],
+      "id": "5e79c348-df0c-4c6f-a33a-0e0e82bcba71",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "fromEmail": "aits@venkateshraju.me",
+        "toEmail": "={{ $json.email }}",
+        "subject": "Today's dev trend are live!!",
+        "text": "Hi there 👋,  |Check out the latest trending GitHub repos, Reddit threads, and dev articles curated just for you!  👉 Visit now: https://ai-trend-scout.venkateshraju.me — Team AI TrendScout",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.mailjet",
+      "typeVersion": 1,
+      "position": [2560, 800],
+      "id": "295a4abd-e69a-417f-84d4-0bc9a62b98eb",
+      "name": "Send an email template",
+      "credentials": {
+        "mailjetEmailApi": {
+          "id": "r3iP9D5WtSfiM43g",
+          "name": "Mailjet Email account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://givtazogkvaoooxtpkfm.supabase.co/rest/v1/subscribers",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2256, 480],
+      "id": "7f1ea4c3-d8b6-4661-933f-1a1228ad8f67",
+      "name": "HTTP Request2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yoS5BSXNPXfyuhPZ",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "hacker news api": {
+      "main": [
+        [
+          {
+            "node": "Hacker News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "github trending api": {
+      "main": [
+        [
+          {
+            "node": "GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "reddit posts api": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "reddit posts api1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Yt videos": {
+      "main": [
+        [
+          {
+            "node": "YouTube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Reddit": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Hacker News": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "YouTube": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Dev.to": {
+      "main": [
+        [
+          {
+            "node": "Merge3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Reddit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge3": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Dev.to",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "reddit posts api1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "reddit posts api",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "github trending api",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "hacker news api",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Yt videos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Send an email template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bb80b92e-2f46-4ece-a3bc-f30820061609",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "027c3ad4fbae36b430e514bf42c90719a39a0b54d1ce9f8950909fabbbba79f2"
+  },
+  "id": "8NmTomld9emND4DT",
+  "tags": []
+}

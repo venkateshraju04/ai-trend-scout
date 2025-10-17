@@ -605,7 +605,7 @@ export default function Home() {
               </p>
               <div className="flex justify-center items-center gap-6">
                 <a
-                  href="mailto:nrvenkateshraju@gmail.com"
+                  href="mailto:me@venkateshraju.me"
                   className="flex items-center gap-2 text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   <Mail className="h-4 w-4" />

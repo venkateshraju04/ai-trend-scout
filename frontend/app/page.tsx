@@ -439,11 +439,30 @@ export default function Home() {
     );
   };
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "AI Trend Scout",
+    url: "https://ai-trend-scout.venkateshraju.me",
+    description:
+      "Discover the latest trends in AI, development, and technology from top sources across the web.",
+    author: {
+      "@type": "Person",
+      name: "Venkatesh Raju",
+      url: "https://venkateshraju.me",
+    },
+  };
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 transition-all duration-500">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 transition-all duration-500">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
+        <nav aria-label="Main navigation" className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div
               className={`flex items-center gap-3 transition-all duration-700 ${
@@ -482,8 +501,8 @@ export default function Home() {
               </Button>
             )}
           </div>
-        </div>
-      </div>
+        </nav>
+      </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Hero Section */}
@@ -608,13 +627,13 @@ export default function Home() {
 
         {/* Content Sections */}
         {!loading && content && (
-          <div className="space-y-12">
+          <section aria-label="Trending content" className="space-y-12">
             {renderCards("devto")}
             {renderCards("youtube")}
             {renderList("github")}
             {renderList("reddit")}
             {renderList("hackernews")}
-          </div>
+          </section>
         )}
 
         {/* Footer */}
@@ -685,5 +704,6 @@ export default function Home() {
         </Dialog>
       )}
     </main>
+    </>
   );
 }

@@ -1,0 +1,16 @@
+{
+  "name": "AI Trend Scout",
+  "short_name": "TrendScout",
+  "description": "Discover the latest trends in AI, development, and technology from top sources across the web.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

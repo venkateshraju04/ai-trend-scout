@@ -607,9 +607,9 @@ export default function Home() {
         {summary && (
           <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
             <DialogTrigger asChild>
-              <button className="fixed bottom-20 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-foreground text-background shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group">
-                <Sparkles className="h-5 w-5 group-hover:animate-spin-slow" />
-                <span className="text-sm font-semibold hidden sm:inline font-mono uppercase text-[10px] tracking-wider">
+              <button className="fixed bottom-24 right-6 z-50 flex items-center gap-2 px-5 py-3 rounded-xl bg-card ring-1 ring-border text-foreground shadow-2xl hover:bg-secondary hover:scale-105 transition-all duration-300 group backdrop-blur-xl">
+                <Sparkles className="h-4 w-4 text-[hsl(15,80%,50%)] group-hover:animate-spin-slow" />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest">
                   AI Summary
                 </span>
               </button>

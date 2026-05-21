@@ -184,10 +184,10 @@ function Nav() {
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="font-mono text-[11px] font-bold tracking-tighter uppercase px-2 py-0.5 bg-foreground text-background">
-            Signal
+            AITS
           </span>
           <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest hidden sm:inline">
-            AI Trend Scout / Intelligence Briefing
+            AI Trend Scout · Daily Briefing
           </span>
         </div>
         <div className="flex items-center gap-4">
@@ -234,9 +234,9 @@ function Hero({
   return (
     <section className="py-20 sm:py-24 border-b border-border stagger-reveal">
       <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tighter text-balance leading-[0.9] mb-10">
-        The open web is noise.
+        Cut through the noise.
         <br />
-        <span className="text-[hsl(15,80%,50%)]">This is the signal.</span>
+        <span className="text-[hsl(15,80%,50%)]">Scout what matters.</span>
       </h1>
 
       <div className="max-w-xl">
@@ -425,9 +425,9 @@ function StickyCta() {
       >
         <div className="hidden sm:flex flex-col">
           <span className="text-[10px] font-mono font-bold uppercase text-[hsl(15,80%,50%)] tracking-tighter">
-            Intelligence Report
+            AI Trend Scout
           </span>
-          <span className="text-xs font-medium">Don&apos;t miss the signal.</span>
+          <span className="text-xs font-medium">Don&apos;t miss today&apos;s trends.</span>
         </div>
         <div className="flex flex-1 sm:flex-none gap-2">
           <input

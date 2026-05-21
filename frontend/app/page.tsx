@@ -580,7 +580,6 @@ export default function Home() {
               {visible.map((item) => (
                 <TrendCard key={item.id} item={item} />
               ))}
-              <WeeklyCta />
             </div>
           )}
 

@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import NextImage from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -14,10 +12,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  TrendingUp,
-  Mail,
-  Sun,
-  Moon,
   Github,
   Youtube,
   ExternalLink,
@@ -26,30 +20,472 @@ import {
   AlertCircle,
   Star,
   Sparkles,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
+import { Toaster, toast } from "sonner";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+function getSupabase() {
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  return createClient(supabaseUrl, supabaseAnonKey);
+}
+
+type Source = "reddit" | "github" | "hackernews" | "youtube" | "devto";
+type Filter = "all" | Source;
+
+const FILTERS: Array<{ id: Filter; label: string }> = [
+  { id: "all", label: "All Sources" },
+  { id: "reddit", label: "Reddit" },
+  { id: "github", label: "GitHub" },
+  { id: "youtube", label: "YouTube" },
+  { id: "hackernews", label: "Hacker News" },
+  { id: "devto", label: "Dev.to" },
+];
+
+const SOURCE_TAG: Record<Source, { bg: string; fg: string; label: string }> = {
+  reddit: { bg: "bg-[hsl(var(--tag-orange-bg))]", fg: "text-[hsl(var(--tag-orange-fg))]", label: "Reddit" },
+  github: { bg: "bg-[hsl(var(--tag-stone-bg))]", fg: "text-[hsl(var(--tag-stone-fg))]", label: "GitHub" },
+  hackernews: { bg: "bg-[hsl(var(--tag-orange-bg))]", fg: "text-[hsl(var(--tag-orange-fg))]", label: "Hacker News" },
+  youtube: { bg: "bg-[hsl(var(--tag-red-bg))]", fg: "text-[hsl(var(--tag-red-fg))]", label: "YouTube" },
+  devto: { bg: "bg-[hsl(var(--tag-blue-bg))]", fg: "text-[hsl(var(--tag-blue-fg))]", label: "Dev.to" },
+};
+
+const sourceLogos: Record<string, string> = {
+  devto: "/logos/devto.svg",
+  reddit: "/logos/reddit.svg",
+  hackernews: "/logos/hackernews.svg",
+};
+
+interface TrendItem {
+  id: string;
+  source: Source;
+  sourceLabel: string;
+  title: string;
+  excerpt?: string;
+  metric: string;
+  metricLabel: string;
+  footerLeft: string;
+  footerRight: string;
+  url: string;
+  thumbnail?: string | null;
+}
+
+function transformContent(content: any): TrendItem[] {
+  if (!content) return [];
+  const items: TrendItem[] = [];
+
+  // Dev.to
+  const devto = content.devto?.slice(0, 5) || [];
+  devto.forEach((item: any, idx: number) => {
+    const p = item.json || item;
+    items.push({
+      id: `devto-${idx}`,
+      source: "devto",
+      sourceLabel: "Dev.to / Article",
+      title: p.title || "Untitled",
+      excerpt: p.description || undefined,
+      metric: "Top",
+      metricLabel: "weekly",
+      footerLeft: p.creator || p.author || "Unknown",
+      footerRight: "Read Post →",
+      url: p.url || p.link || "#",
+      thumbnail: p.image || null,
+    });
+  });
+
+  // YouTube
+  const youtube = content.youtube?.slice(0, 5) || [];
+  youtube.forEach((item: any, idx: number) => {
+    const p = item.json || item;
+    const url = p.url || "#";
+    const videoId = url.match?.(/v=([^&]+)/)?.[1];
+    items.push({
+      id: `youtube-${idx}`,
+      source: "youtube",
+      sourceLabel: `YouTube / ${p.channel || "Channel"}`,
+      title: p.title || "Untitled",
+      excerpt: p.description || undefined,
+      metric: "Trending",
+      metricLabel: "views",
+      footerLeft: p.channel || "Unknown",
+      footerRight: "Watch →",
+      url,
+      thumbnail: videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null,
+    });
+  });
+
+  // GitHub
+  const github = content.github?.slice(0, 10) || [];
+  github.forEach((item: any, idx: number) => {
+    const p = item.json || item;
+    const stars = p.stars || p.stargazers_count || 0;
+    items.push({
+      id: `github-${idx}`,
+      source: "github",
+      sourceLabel: "GitHub / Trending Repo",
+      title: p.title || "Untitled",
+      excerpt: p.description || undefined,
+      metric: `★ ${typeof stars === "number" ? stars.toLocaleString() : stars}`,
+      metricLabel: "stars",
+      footerLeft: p.language || p.author || "Unknown",
+      footerRight: "View Repo →",
+      url: p.url || p.link || p.repoUrl || "#",
+    });
+  });
+
+  // Reddit
+  const reddit = content.reddit?.slice(0, 5) || [];
+  reddit.forEach((item: any, idx: number) => {
+    const p = item.json || item;
+    items.push({
+      id: `reddit-${idx}`,
+      source: "reddit",
+      sourceLabel: p.subreddit ? `Reddit / r/${p.subreddit}` : "Reddit",
+      title: p.title || "Untitled",
+      metric: p.upvotes ? `+${typeof p.upvotes === "number" ? p.upvotes.toLocaleString() : p.upvotes}` : "Hot",
+      metricLabel: "upvotes",
+      footerLeft: p.author ? `by ${p.author}` : "Unknown",
+      footerRight: "Read Thread →",
+      url: p.url || p.link || "#",
+    });
+  });
+
+  // Hacker News
+  const hn = content.hackernews?.slice(0, 5) || [];
+  hn.forEach((item: any, idx: number) => {
+    const p = item.json || item;
+    items.push({
+      id: `hn-${idx}`,
+      source: "hackernews",
+      sourceLabel: "Hacker News",
+      title: p.title || "Untitled",
+      metric: p.points ? `${p.points} pts` : "Top",
+      metricLabel: "points",
+      footerLeft: p.author ? `by ${p.author}` : "Unknown",
+      footerRight: "Discuss →",
+      url: p.url || p.link || "#",
+    });
+  });
+
+  return items;
+}
+
+/* ── Nav ────────────────────────────────────────── */
+function Nav() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  return (
+    <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-[11px] font-bold tracking-tighter uppercase px-2 py-0.5 bg-foreground text-background">
+            Signal
+          </span>
+          <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest hidden sm:inline">
+            AI Trend Scout / Intelligence Briefing
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-radar absolute inline-flex h-full w-full rounded-full bg-[hsl(15,80%,50%)]" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[hsl(15,80%,50%)]" />
+            </span>
+            <span className="text-[10px] font-mono text-muted-foreground uppercase">
+              Live · updated daily
+            </span>
+          </div>
+          {mounted && (
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+/* ── Hero ───────────────────────────────────────── */
+function Hero({
+  email,
+  setEmail,
+  cadence,
+  setCadence,
+  onSubscribe,
+  subscribeStatus,
+}: {
+  email: string;
+  setEmail: (v: string) => void;
+  cadence: "daily" | "weekly";
+  setCadence: (v: "daily" | "weekly") => void;
+  onSubscribe: () => void;
+  subscribeStatus: "success" | "error" | null;
+}) {
+  return (
+    <section className="py-20 sm:py-24 border-b border-border stagger-reveal">
+      <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tighter text-balance leading-[0.9] mb-10">
+        The open web is noise.
+        <br />
+        <span className="text-[hsl(15,80%,50%)]">This is the signal.</span>
+      </h1>
+
+      <div className="max-w-xl">
+        <p className="text-lg sm:text-xl text-muted-foreground mb-8 leading-relaxed">
+          Daily-curated extraction of high-gravity AI developments across Reddit,
+          GitHub, Hacker News, YouTube and Dev.to.
+        </p>
+
+        <div className="p-1 bg-card ring-1 ring-border rounded-xl flex flex-wrap sm:flex-nowrap items-center gap-1 shadow-sm">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="briefing@yourdomain.ai"
+            className="flex-1 min-w-[180px] px-4 py-3 outline-none text-sm bg-transparent"
+          />
+          <div className="flex items-center gap-1 bg-secondary px-1 rounded-lg ring-1 ring-border">
+            {(["daily", "weekly"] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCadence(c)}
+                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors font-mono ${
+                  cadence === c
+                    ? "bg-card shadow-sm ring-1 ring-border text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={onSubscribe}
+            className="bg-foreground text-background px-6 py-3 rounded-lg text-sm font-bold hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            Subscribe
+          </button>
+        </div>
+
+        {subscribeStatus && (
+          <div className={`mt-3 flex items-center gap-2 text-sm ${
+            subscribeStatus === "success" ? "text-green-600" : "text-red-500"
+          }`}>
+            {subscribeStatus === "success" ? (
+              <><CheckCircle className="h-4 w-4" /> Subscribed to the {cadence} briefing!</>
+            ) : (
+              <><AlertCircle className="h-4 w-4" /> Please enter a valid email address.</>
+            )}
+          </div>
+        )}
+
+        <p className="mt-3 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+          Free · No spam · Unsubscribe in one click
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ── Source Tabs ─────────────────────────────────── */
+function SourceTabs({
+  value,
+  onChange,
+  counts,
+}: {
+  value: Filter;
+  onChange: (v: Filter) => void;
+  counts: Record<Filter, number>;
+}) {
+  return (
+    <div className="flex gap-6 sm:gap-8 border-b border-border overflow-x-auto no-scrollbar">
+      {FILTERS.map((f) => {
+        const active = value === f.id;
+        return (
+          <button
+            key={f.id}
+            onClick={() => onChange(f.id)}
+            className={`py-4 border-b-2 text-xs font-mono font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${
+              active
+                ? "border-[hsl(15,80%,50%)] text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {f.label}
+            <span className="ml-2 text-[10px] text-muted-foreground font-normal">
+              {counts[f.id]}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Trend Card ─────────────────────────────────── */
+function TrendCard({ item }: { item: TrendItem }) {
+  const tag = SOURCE_TAG[item.source];
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="border-r border-b border-border p-8 group hover:bg-secondary transition-colors flex flex-col"
+    >
+      <div className="flex justify-between items-start gap-3 mb-6">
+        <span className={`px-2 py-0.5 ${tag.bg} ${tag.fg} text-[10px] font-mono font-bold uppercase tracking-tighter`}>
+          {item.sourceLabel}
+        </span>
+        <span className="text-xs font-mono font-bold text-[hsl(15,80%,50%)] whitespace-nowrap">
+          {item.metric}
+        </span>
+      </div>
+
+      {item.thumbnail && (
+        <div className="relative overflow-hidden rounded-lg mb-4">
+          <img
+            src={item.thumbnail}
+            alt={item.title}
+            className="w-full h-36 object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      )}
+
+      <h3 className="text-xl font-bold tracking-tight mb-4 group-hover:underline decoration-[hsl(15,80%,50%)] decoration-2 underline-offset-4">
+        {item.title}
+      </h3>
+      {item.excerpt && (
+        <p className="text-sm text-muted-foreground mb-6 line-clamp-2">{item.excerpt}</p>
+      )}
+      <div className="mt-auto flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+        <span>{item.footerLeft}</span>
+        <span className="text-foreground font-bold">{item.footerRight}</span>
+      </div>
+    </a>
+  );
+}
+
+/* ── Weekly CTA Card ────────────────────────────── */
+function WeeklyCta() {
+  return (
+    <div className="border-r border-b border-border p-8 bg-foreground text-background flex flex-col justify-center items-center text-center">
+      <span className="text-[10px] font-mono uppercase tracking-[0.2em] mb-4 opacity-60">
+        The Weekly Brief
+      </span>
+      <h3 className="text-2xl font-extrabold tracking-tighter mb-6">
+        Get the Sunday Deep-Dive.
+      </h3>
+      <a
+        href="#top"
+        className="w-full py-4 bg-background text-foreground text-xs font-bold uppercase tracking-widest rounded-lg hover:opacity-90 transition-opacity text-center inline-block"
+      >
+        Join the Scouts
+      </a>
+    </div>
+  );
+}
+
+/* ── Sticky CTA ─────────────────────────────────── */
+function StickyCta() {
+  const [email, setEmail] = useState("");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Please enter a valid email");
+      return;
+    }
+    const sb = getSupabase();
+    if (!sb) { toast.error("Service unavailable"); return; }
+    const { error } = await sb
+      .from("subscribers")
+      .insert([{ email: email.trim(), preference: "daily" }]);
+    if (error) {
+      toast.error("Subscription failed. Try again.");
+    } else {
+      toast.success("Subscribed to the daily briefing");
+      setEmail("");
+    }
+  };
+
+  return (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-2xl pointer-events-none">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-background/95 border border-border shadow-2xl rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 pointer-events-auto backdrop-blur-xl"
+      >
+        <div className="hidden sm:flex flex-col">
+          <span className="text-[10px] font-mono font-bold uppercase text-[hsl(15,80%,50%)] tracking-tighter">
+            Intelligence Report
+          </span>
+          <span className="text-xs font-medium">Don&apos;t miss the signal.</span>
+        </div>
+        <div className="flex flex-1 sm:flex-none gap-2">
+          <input
+            type="email"
+            required
+            maxLength={255}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email..."
+            className="bg-secondary px-4 py-2 rounded-lg text-xs flex-1 sm:w-48 focus:outline-none ring-1 ring-border"
+          />
+          <button
+            type="submit"
+            className="bg-foreground text-background px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity"
+          >
+            Join
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+/* ── Loading Skeleton ───────────────────────────── */
+function LoadingSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border-l border-border">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="border-r border-b border-border p-8 flex flex-col gap-4">
+          <div className="flex justify-between">
+            <div className="h-5 w-32 skeleton-shimmer rounded" />
+            <div className="h-5 w-16 skeleton-shimmer rounded" />
+          </div>
+          <div className="h-6 w-full skeleton-shimmer rounded" />
+          <div className="h-4 w-3/4 skeleton-shimmer rounded" />
+          <div className="mt-auto flex justify-between">
+            <div className="h-3 w-24 skeleton-shimmer rounded" />
+            <div className="h-3 w-20 skeleton-shimmer rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Main Page ──────────────────────────────────── */
 export default function Home() {
   const [content, setContent] = useState<any>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [email, setEmail] = useState("");
-  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
-  const [subscribeStatus, setSubscribeStatus] = useState<
-    "success" | "error" | null
-  >(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [frequency, setFrequency] = useState("weekly");
-  const [mounted, setMounted] = useState(false);
+  const [subscribeStatus, setSubscribeStatus] = useState<"success" | "error" | null>(null);
+  const [cadence, setCadence] = useState<"daily" | "weekly">("daily");
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
 
   useEffect(() => {
-    setMounted(true);
-    setIsVisible(true);
     setLoading(true);
     fetch(
       "https://givtazogkvaoooxtpkfm.supabase.co/storage/v1/object/public/trend-scout/latestContent.json"
@@ -69,14 +505,25 @@ export default function Home() {
     )
       .then((res) => res.json())
       .then((data) => {
-        if (data && data[0]?.output) {
-          setSummary(data[0].output);
-        }
+        if (data && data[0]?.output) setSummary(data[0].output);
       })
-      .catch((err) => {
-        console.error("Failed to fetch summary:", err);
-      });
+      .catch((err) => console.error("Failed to fetch summary:", err));
   }, []);
+
+  const items = useMemo(() => transformContent(content), [content]);
+
+  const counts = useMemo(() => {
+    const base: Record<Filter, number> = {
+      all: items.length, reddit: 0, github: 0, youtube: 0, hackernews: 0, devto: 0,
+    };
+    for (const it of items) base[it.source] += 1;
+    return base;
+  }, [items]);
+
+  const visible = useMemo(
+    () => (filter === "all" ? items : items.filter((i) => i.source === filter)),
+    [filter, items]
+  );
 
   const handleSubscribe = async () => {
     if (!email || !email.includes("@")) {
@@ -84,13 +531,12 @@ export default function Home() {
       setTimeout(() => setSubscribeStatus(null), 3000);
       return;
     }
-
-    const { error } = await supabase
+    const sb = getSupabase();
+    if (!sb) { setSubscribeStatus("error"); return; }
+    const { error } = await sb
       .from("subscribers")
-      .insert([{ email, preference: frequency }]);
-
+      .insert([{ email, preference: cadence }]);
     if (error) {
-      console.error("Subscription error:", error.message);
       setSubscribeStatus("error");
     } else {
       setSubscribeStatus("success");
@@ -99,358 +545,13 @@ export default function Home() {
     setTimeout(() => setSubscribeStatus(null), 3000);
   };
 
-  const sourceLogos = {
-    devto: "/logos/devto.svg",
-    reddit: "/logos/reddit.svg",
-    hackernews: "/logos/hackernews.svg",
-  };
-
-  const getSourceIcon = (source: string) => {
-    const customLogo = sourceLogos[source as keyof typeof sourceLogos];
-    if (customLogo) {
-      return (
-        <NextImage
-          src={customLogo}
-          alt={`${source} logo`}
-          width={20}
-          height={20}
-        />
-      );
-    }
-    const icons: Record<string, React.ReactElement> = {
-      youtube: <Youtube className="h-4 w-4" />,
-      github: <Github className="h-4 w-4" />,
-    };
-    return icons[source] || <TrendingUp className="h-4 w-4" />;
-  };
-
-  const getSourceColor = (source: string) => {
-    const colors: Record<string, string> = {
-      devto: "from-purple-500 to-pink-500",
-      youtube: "from-red-500 to-red-600",
-
-      github: "from-gray-700 to-gray-900",
-      reddit: "from-orange-500 to-red-500",
-      hackernews: "from-orange-600 to-yellow-500",
-    };
-    return colors[source] || "from-blue-500 to-purple-500";
-  };
-
-  const renderCards = (source: string) => {
-    const posts = content?.[source]?.slice(0, 5);
-    if (!posts) return null;
-
-    return (
-      <div
-        className={`mb-12 transition-all duration-700 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="flex items-center gap-3 mb-2">
-          <div
-            className={`p-2 rounded-lg bg-gradient-to-r ${getSourceColor(
-              source
-            )} text-white`}
-          >
-            {getSourceIcon(source)}
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            {source.charAt(0).toUpperCase() + source.slice(1)}
-          </h2>
-        </div>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
-          {source === "devto" && "Top articles from the developer community"}
-          {source === "youtube" && "Trending tech videos and tutorials"}
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {posts.map((item: any, idx: number) => {
-            const p = item.json || item;
-            const url = p.url || p.link || p.repoUrl;
-            const title = p.title;
-            const author = p.creator || p.author || p.channel || "Unknown";
-            const thumbnail =
-              p.thumbnail ||
-              (source === "youtube" && url?.match(/v=([^&]+)/)?.[1]
-                ? `https://img.youtube.com/vi/${
-                    url.match(/v=([^&]+)/)[1]
-                  }/hqdefault.jpg`
-                : source === "devto" && p.image
-                ? p.image
-                : null);
-
-            return (
-              <Card
-                key={idx}
-                className="group hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 overflow-hidden"
-              >
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block h-full"
-                >
-                  <CardContent className="p-0 h-full flex flex-col">
-                    {thumbnail && (
-                      <div className="relative overflow-hidden">
-                        <img
-                          src={thumbnail || "/placeholder.svg"}
-                          alt={title}
-                          className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        <ExternalLink className="absolute top-2 right-2 h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                    )}
-                    <div className="p-4 flex-1 flex flex-col">
-                      <h3 className="font-semibold text-sm mb-2 text-gray-800 dark:text-gray-100 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {title}
-                      </h3>
-                      <div className="mt-auto">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                          {getSourceIcon(source)}
-                          {author}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </a>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderList = (source: string) => {
-    const posts = content?.[source]?.slice(0, 10); // Get up to 10 posts
-    if (!posts) return null;
-
-    // For GitHub, split into two columns
-    if (source === "github") {
-      const leftPosts = posts.slice(0, 5);
-      const rightPosts = posts.slice(5, 10);
-
-      return (
-        <div
-          className={`mb-12 transition-all duration-700 delay-200 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
-        >
-          <div className="flex items-center gap-3 mb-2">
-            <div
-              className={`p-2 rounded-lg bg-gradient-to-r ${getSourceColor(
-                source
-              )} text-white`}
-            >
-              {getSourceIcon(source)}
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-              {source.charAt(0).toUpperCase() + source.slice(1)}
-            </h2>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
-            {source === "github" &&
-              "Trending repositories and open source projects"}
-            {source === "reddit" && "Popular discussions from tech communities"}
-            {source === "hackernews" && "Top stories from Hacker News"}
-          </p>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Left Column */}
-            <Card className="border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
-              <CardContent className="p-6">
-                <div className="space-y-2">
-                  {leftPosts.map((item: any, idx: number) => {
-                    const p = item.json || item;
-                    const url = p.url || p.link || p.repoUrl;
-                    const title = p.title;
-                    const stars = p.stars || p.stargazers_count || null;
-                    const username = p.owner?.login || p.author || null;
-
-                    return (
-                      <div
-                        key={idx}
-                        className="group flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-                      >
-                        <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                          <span className="text-sm font-medium text-black dark:text-white">
-                            {idx + 1}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors group-hover:underline"
-                            >
-                              {title}
-                            </a>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {stars && (
-                            <div className="flex items-center gap-1 text-sm text-black dark:text-white">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              {typeof stars === "number"
-                                ? stars.toLocaleString()
-                                : stars}
-                            </div>
-                          )}
-                          <ExternalLink className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Right Column */}
-            {rightPosts.length > 0 && (
-              <Card className="border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
-                <CardContent className="p-6">
-                  <div className="space-y-2">
-                    {rightPosts.map((item: any, idx: number) => {
-                      const p = item.json || item;
-                      const url = p.url || p.link || p.repoUrl;
-                      const title = p.title;
-                      const stars = p.stars || p.stargazers_count || null;
-                      const username = p.owner?.login || p.author || null;
-
-                      return (
-                        <div
-                          key={idx}
-                          className="group flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-                        >
-                          <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                            <span className="text-sm font-medium text-black dark:text-white">
-                              {idx + 6}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors group-hover:underline"
-                              >
-                                {title}
-                              </a>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {stars && (
-                              <div className="flex items-center gap-1 text-sm text-black dark:text-white">
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                {typeof stars === "number"
-                                  ? stars.toLocaleString()
-                                  : stars}
-                              </div>
-                            )}
-                            <ExternalLink className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // For Reddit and Hacker News, keep single column but with black text and plain numbering
-    return (
-      <div
-        className={`mb-12 transition-all duration-700 delay-200 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="flex items-center gap-3 mb-2">
-          <div
-            className={`p-2 rounded-lg bg-gradient-to-r ${getSourceColor(
-              source
-            )} text-white`}
-          >
-            {getSourceIcon(source)}
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-            {source.charAt(0).toUpperCase() + source.slice(1)}
-          </h2>
-        </div>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm">
-          {source === "github" &&
-            "Trending repositories and open source projects"}
-          {source === "reddit" && "Popular discussions from tech communities"}
-          {source === "hackernews" && "Top stories from Hacker News"}
-        </p>
-
-        <Card className="border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
-          <CardContent className="p-6">
-            <div className="space-y-2">
-              {posts.slice(0, 5).map((item: any, idx: number) => {
-                const p = item.json || item;
-                const url = p.url || p.link || p.repoUrl;
-                const title = p.title;
-                const author = p.creator || p.author || p.channel || "Unknown";
-
-                return (
-                  <div
-                    key={idx}
-                    className="group flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-                  >
-                    <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                      <span className="text-sm font-medium text-black dark:text-white">
-                        {idx + 1}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-black dark:text-white hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors group-hover:underline"
-                        >
-                          {title}
-                        </a>
-                      </div>
-                      <p className="text-sm text-black dark:text-white mt-1">
-                        by {author}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <ExternalLink className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "AI Trend Scout",
     url: "https://ai-trend-scout.venkateshraju.me",
-    description:
-      "Discover the latest trends in AI, development, and technology from top sources across the web.",
-    author: {
-      "@type": "Person",
-      name: "Venkatesh Raju",
-      url: "https://venkateshraju.me",
-    },
+    description: "Discover the latest trends in AI, development, and technology from top sources across the web.",
+    author: { "@type": "Person", name: "Venkatesh Raju", url: "https://venkateshraju.me" },
   };
 
   return (
@@ -459,257 +560,91 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-950 dark:via-gray-900 dark:to-gray-800 transition-all duration-500">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50">
-        <nav aria-label="Main navigation" className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div
-              className={`flex items-center gap-3 transition-all duration-700 ${
-                isVisible
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 -translate-x-10"
-              }`}
-            >
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                AI Trend Scout
-              </h1>
+      <div className="min-h-screen bg-background text-foreground font-sans selection:bg-[hsl(15,80%,50%)] selection:text-white">
+        <Nav />
+        <main id="top" className="max-w-7xl mx-auto px-6">
+          <Hero
+            email={email}
+            setEmail={setEmail}
+            cadence={cadence}
+            setCadence={setCadence}
+            onSubscribe={handleSubscribe}
+            subscribeStatus={subscribeStatus}
+          />
+
+          <SourceTabs value={filter} onChange={setFilter} counts={counts} />
+
+          {loading && <LoadingSkeleton />}
+
+          {!loading && items.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border-l border-border">
+              {visible.map((item) => (
+                <TrendCard key={item.id} item={item} />
+              ))}
+              {filter === "all" && <WeeklyCta />}
             </div>
+          )}
 
-            {mounted && (
-              <Button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                variant="outline"
-                size="sm"
-                className={`transition-all duration-300 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${
-                  isVisible
-                    ? "opacity-100 translate-x-0"
-                    : "opacity-0 translate-x-10"
-                }`}
-              >
-                {theme === "dark" ? (
-                  <>
-                    <Sun className="h-4 w-4 mr-2" />
-                    Light
-                  </>
-                ) : (
-                  <>
-                    <Moon className="h-4 w-4 mr-2" />
-                    Dark
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </nav>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Hero Section */}
-        <div
-          className={`text-center mb-12 transition-all duration-700 delay-300 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
-        >
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 dark:from-white dark:via-blue-100 dark:to-purple-100 bg-clip-text text-transparent">
-            Stay Ahead of the Curve
-          </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            Discover the latest trends in AI, development, and technology from
-            top sources across the web.
-          </p>
-
-          {/* Subscription Form */}
-          <Card className="max-w-lg mx-auto border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 border-0 bg-gray-100 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs ${
-                          frequency === "daily"
-                            ? "text-blue-600 font-medium"
-                            : "text-gray-500 dark:text-gray-400"
-                        }`}
-                      >
-                        Daily
-                      </span>
-                      <button
-                        onClick={() =>
-                          setFrequency(
-                            frequency === "daily" ? "weekly" : "daily"
-                          )
-                        }
-                        className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                          frequency === "daily"
-                            ? "bg-blue-500 focus:ring-blue-500"
-                            : "bg-green-500 focus:ring-green-500"
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                            frequency === "weekly"
-                              ? "translate-x-4"
-                              : "translate-x-0.5"
-                          }`}
-                        />
-                      </button>
-                      <span
-                        className={`text-xs ${
-                          frequency === "weekly"
-                            ? "text-green-600 font-medium"
-                            : "text-gray-500 dark:text-gray-400"
-                        }`}
-                      >
-                        Weekly
-                      </span>
-                    </div>
-                    <Button
-                      onClick={handleSubscribe}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-6"
-                    >
-                      Subscribe
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {subscribeStatus && (
-                <div
-                  className={`mt-3 flex items-center gap-2 text-sm ${
-                    subscribeStatus === "success"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {subscribeStatus === "success" ? (
-                    <>
-                      <CheckCircle className="h-4 w-4" />
-                      Successfully subscribed for {frequency} updates!
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="h-4 w-4" />
-                      Please enter a valid email address.
-                    </>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-4 text-center max-w-md mx-auto">
-            Subscribe to our newsletter for daily/weekly updates and insights.
-            <br />
-            No spam, just the good stuff!
-          </p>
-        </div>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
-            <p className="text-gray-600 dark:text-gray-300">
-              Loading latest trends...
-            </p>
-          </div>
-        )}
-
-        {/* Content Sections */}
-        {!loading && content && (
-          <section aria-label="Trending content" className="space-y-12">
-            {renderCards("devto")}
-            {renderCards("youtube")}
-            {renderList("github")}
-            {renderList("reddit")}
-            {renderList("hackernews")}
-          </section>
-        )}
-
-        {/* Footer */}
-        <footer
-          className={`mt-20 py-8 border-t border-gray-200 dark:border-gray-700 transition-all duration-700 delay-500 ${
-            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-          }`}
-        >
-          <div className="text-center text-gray-500 dark:text-gray-400 space-y-4">
-            <p className="text-sm">
-              Data sourced from Dev.to, YouTube, GitHub, Reddit, and Hacker News
-            </p>
-            <div className="flex justify-center items-center gap-6">
-              <a
-                href="mailto:me@venkateshraju.in"
-                className="flex items-center gap-2 text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              >
-                <Mail className="h-4 w-4" />
-                Contact Us
-              </a>
-              <a
-                href="https://github.com/venkateshraju04/ai-trend-scout"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-sm hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-              >
-                <Github className="h-4 w-4" />
-                GitHub
-              </a>
-            </div>
-          </div>
-        </footer>
-      </div>
-      {/* Floating AI Summary Button */}
-      {summary && (
-        <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
-          <DialogTrigger asChild>
-            <button
-              className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group"
-            >
-              <Sparkles className="h-5 w-5 group-hover:animate-spin" />
-              <span className="text-sm font-semibold hidden sm:inline">AI Summary</span>
-            </button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                  <Sparkles className="h-5 w-5" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  AI-Powered Summary
-                </span>
-              </DialogTitle>
-            </DialogHeader>
-            <div className="mt-2">
-              <div className="rounded-xl bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-pink-950/30 p-6">
-                <p
-                  className="text-gray-700 dark:text-gray-300 leading-relaxed text-[15px]"
-                  dangerouslySetInnerHTML={{
-                    __html: summary.replace(
-                      /\*\*(.+?)\*\*/g,
-                      "<strong>$1</strong>"
-                    ),
-                  }}
-                />
-              </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 flex items-center gap-1">
-                <Sparkles className="h-3 w-3" />
-                Generated by Gemini from today&apos;s trending content
+          {!loading && items.length === 0 && (
+            <div className="py-20 text-center">
+              <p className="text-muted-foreground font-mono text-sm uppercase tracking-widest">
+                No intelligence available. Check back soon.
               </p>
             </div>
-          </DialogContent>
-        </Dialog>
-      )}
-    </main>
+          )}
+
+          <footer className="py-12 mt-8 border-t border-border flex flex-col sm:flex-row justify-between items-start gap-4 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+            <span>© AI Trend Scout · Curated by algorithms, verified by humans</span>
+            <div className="flex gap-4">
+              <a href="mailto:me@venkateshraju.in" className="hover:text-foreground transition-colors">Contact</a>
+              <a href="https://github.com/venkateshraju04/ai-trend-scout" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
+            </div>
+          </footer>
+        </main>
+
+        <div className="h-28" />
+        <StickyCta />
+
+        {/* Floating AI Summary Button */}
+        {summary && (
+          <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
+            <DialogTrigger asChild>
+              <button className="fixed bottom-20 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full bg-foreground text-background shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 group">
+                <Sparkles className="h-5 w-5 group-hover:animate-spin-slow" />
+                <span className="text-sm font-semibold hidden sm:inline font-mono uppercase text-[10px] tracking-wider">
+                  AI Summary
+                </span>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg bg-card border border-border rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-foreground text-background">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <span className="text-xl font-bold">AI-Powered Summary</span>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-2">
+                <div className="rounded-xl bg-secondary p-6">
+                  <p
+                    className="text-foreground leading-relaxed text-[15px]"
+                    dangerouslySetInnerHTML={{
+                      __html: summary.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"),
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-4 flex items-center gap-1 font-mono uppercase tracking-widest">
+                  <Sparkles className="h-3 w-3" />
+                  Generated by Gemini from today&apos;s trending content
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        <Toaster position="bottom-right" />
+      </div>
     </>
   );
 }

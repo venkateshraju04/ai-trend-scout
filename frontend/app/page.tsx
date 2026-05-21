@@ -35,15 +35,14 @@ function getSupabase() {
 }
 
 type Source = "reddit" | "github" | "hackernews" | "youtube" | "devto";
-type Filter = "all" | Source;
+type Filter = Source;
 
 const FILTERS: Array<{ id: Filter; label: string }> = [
-  { id: "all", label: "All Sources" },
-  { id: "reddit", label: "Reddit" },
-  { id: "github", label: "GitHub" },
-  { id: "youtube", label: "YouTube" },
-  { id: "hackernews", label: "Hacker News" },
   { id: "devto", label: "Dev.to" },
+  { id: "youtube", label: "YouTube" },
+  { id: "github", label: "GitHub" },
+  { id: "reddit", label: "Reddit" },
+  { id: "hackernews", label: "Hacker News" },
 ];
 
 const SOURCE_TAG: Record<Source, { bg: string; fg: string; label: string }> = {
@@ -483,7 +482,7 @@ export default function Home() {
   const [subscribeStatus, setSubscribeStatus] = useState<"success" | "error" | null>(null);
   const [cadence, setCadence] = useState<"daily" | "weekly">("daily");
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>("devto");
 
   useEffect(() => {
     setLoading(true);
@@ -514,14 +513,14 @@ export default function Home() {
 
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
-      all: items.length, reddit: 0, github: 0, youtube: 0, hackernews: 0, devto: 0,
+      reddit: 0, github: 0, youtube: 0, hackernews: 0, devto: 0,
     };
     for (const it of items) base[it.source] += 1;
     return base;
   }, [items]);
 
   const visible = useMemo(
-    () => (filter === "all" ? items : items.filter((i) => i.source === filter)),
+    () => items.filter((i) => i.source === filter),
     [filter, items]
   );
 
@@ -581,7 +580,7 @@ export default function Home() {
               {visible.map((item) => (
                 <TrendCard key={item.id} item={item} />
               ))}
-              {filter === "all" && <WeeklyCta />}
+              <WeeklyCta />
             </div>
           )}
 

@@ -241,8 +241,7 @@ function Hero({
 
       <div className="max-w-xl">
         <p className="text-lg sm:text-xl text-muted-foreground mb-8 leading-relaxed">
-          Daily-curated extraction of high-gravity AI developments across Reddit,
-          GitHub, Hacker News, YouTube and Dev.to.
+          Discover the latest trends in AI, development, and technology from top sources across the web. Updated daily.
         </p>
 
         <div className="p-1 bg-card ring-1 ring-border rounded-xl flex flex-wrap sm:flex-nowrap items-center gap-1 shadow-sm">

@@ -249,7 +249,7 @@ function Hero({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="briefing@yourdomain.ai"
+            placeholder="yourname@email.com"
             className="flex-1 min-w-[180px] px-4 py-3 outline-none text-sm bg-transparent"
           />
           <div className="flex items-center gap-1 bg-secondary px-1 rounded-lg ring-1 ring-border">
@@ -258,11 +258,10 @@ function Hero({
                 key={c}
                 type="button"
                 onClick={() => setCadence(c)}
-                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors font-mono ${
-                  cadence === c
+                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors font-mono ${cadence === c
                     ? "bg-card shadow-sm ring-1 ring-border text-foreground"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 {c}
               </button>
@@ -277,9 +276,8 @@ function Hero({
         </div>
 
         {subscribeStatus && (
-          <div className={`mt-3 flex items-center gap-2 text-sm ${
-            subscribeStatus === "success" ? "text-green-600" : "text-red-500"
-          }`}>
+          <div className={`mt-3 flex items-center gap-2 text-sm ${subscribeStatus === "success" ? "text-green-600" : "text-red-500"
+            }`}>
             {subscribeStatus === "success" ? (
               <><CheckCircle className="h-4 w-4" /> Subscribed to the {cadence} briefing!</>
             ) : (
@@ -314,11 +312,10 @@ function SourceTabs({
           <button
             key={f.id}
             onClick={() => onChange(f.id)}
-            className={`py-4 border-b-2 text-xs font-mono font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${
-              active
+            className={`py-4 border-b-2 text-xs font-mono font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${active
                 ? "border-[hsl(15,80%,50%)] text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             {f.label}
             <span className="ml-2 text-[10px] text-muted-foreground font-normal">

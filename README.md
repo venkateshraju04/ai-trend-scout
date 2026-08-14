@@ -1,5 +1,5 @@
 # AI TrendScout
- ### Check out the webpage [here](https://ai-trend-scout.venkateshraju.me/)
+ ### Check out the webpage [here](https://ai-trend-scout.venkateshraju.in/)
  
 **AI TrendScout** automatically tracks the latest trending topics from across the web including **GitHub**, **Hacker News**, **YouTube**, and **Dev.to**  and displays them in one beautiful, easy-to-digest dashboard.
 

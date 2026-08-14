@@ -25,10 +25,10 @@ export const metadata: Metadata = {
     "LLM updates",
     "open source trending",
   ],
-  authors: [{ name: "Venkatesh Raju", url: "https://venkateshraju.me" }],
+  authors: [{ name: "Venkatesh Raju", url: "https://venkateshraju.in" }],
   creator: "Venkatesh Raju",
   publisher: "AI Trend Scout",
-  metadataBase: new URL("https://ai-trend-scout.venkateshraju.me"),
+  metadataBase: new URL("https://ai-trend-scout.venkateshraju.in"),
   alternates: {
     canonical: "/",
   },

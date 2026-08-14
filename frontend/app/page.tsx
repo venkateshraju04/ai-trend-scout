@@ -259,8 +259,8 @@ function Hero({
                 type="button"
                 onClick={() => setCadence(c)}
                 className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-colors font-mono ${cadence === c
-                    ? "bg-card shadow-sm ring-1 ring-border text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "bg-card shadow-sm ring-1 ring-border text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 {c}
@@ -313,8 +313,8 @@ function SourceTabs({
             key={f.id}
             onClick={() => onChange(f.id)}
             className={`py-4 border-b-2 text-xs font-mono font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${active
-                ? "border-[hsl(15,80%,50%)] text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+              ? "border-[hsl(15,80%,50%)] text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
           >
             {f.label}
@@ -544,9 +544,9 @@ export default function Home() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "AI Trend Scout",
-    url: "https://ai-trend-scout.venkateshraju.me",
+    url: "https://ai-trend-scout.venkateshraju.in",
     description: "Discover the latest trends in AI, development, and technology from top sources across the web.",
-    author: { "@type": "Person", name: "Venkatesh Raju", url: "https://venkateshraju.me" },
+    author: { "@type": "Person", name: "Venkatesh Raju", url: "https://venkateshraju.in" },
   };
 
   return (

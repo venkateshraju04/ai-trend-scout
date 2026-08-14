@@ -8,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
       },
     ],
-    sitemap: "https://ai-trend-scout.venkateshraju.me/sitemap.xml",
+    sitemap: "https://ai-trend-scout.venkateshraju.in/sitemap.xml",
   };
 }

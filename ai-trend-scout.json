@@ -317,10 +317,10 @@
     },
     {
       "parameters": {
-        "fromEmail": "aits@venkateshraju.me",
+        "fromEmail": "aits@venkateshraju.in",
         "toEmail": "={{ $json.email }}",
         "subject": "Today's dev trend are live!!",
-        "text": "Hi there 👋,  |Check out the latest trending GitHub repos, Reddit threads, and dev articles curated just for you!  👉 Visit now: https://ai-trend-scout.venkateshraju.me — Team AI TrendScout",
+        "text": "Hi there 👋,  |Check out the latest trending GitHub repos, Reddit threads, and dev articles curated just for you!  👉 Visit now: https://ai-trend-scout.venkateshraju.in — Team AI TrendScout",
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.mailjet",

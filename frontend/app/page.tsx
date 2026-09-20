@@ -22,6 +22,9 @@ import {
   Sparkles,
   Sun,
   Moon,
+  Trophy,
+  Crown,
+  Medal,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { Toaster, toast } from "sonner";
@@ -58,6 +61,50 @@ const sourceLogos: Record<string, string> = {
   reddit: "/logos/reddit.svg",
   hackernews: "/logos/hackernews.svg",
 };
+
+/* ── Leaderboard Types & Config ────────────────── */
+type LeaderboardCategory = "text" | "agent" | "text-to-image";
+
+interface LeaderboardEntry {
+  category: LeaderboardCategory;
+  rank: number;
+  model: string;
+  vendor: string;
+  score?: number;
+}
+
+const LEADERBOARD_CATEGORIES: Array<{ id: LeaderboardCategory; label: string }> = [
+  { id: "text", label: "Chat" },
+  { id: "agent", label: "Agent" },
+  { id: "text-to-image", label: "Text to Image" },
+];
+
+const VENDOR_COLORS: Record<string, { bg: string; fg: string }> = {
+  Anthropic: { bg: "bg-[hsl(var(--tag-orange-bg))]", fg: "text-[hsl(var(--tag-orange-fg))]" },
+  OpenAI: { bg: "bg-[hsl(var(--tag-green-bg))]", fg: "text-[hsl(var(--tag-green-fg))]" },
+  Google: { bg: "bg-[hsl(var(--tag-blue-bg))]", fg: "text-[hsl(var(--tag-blue-fg))]" },
+  Meta: { bg: "bg-[hsl(var(--tag-blue-bg))]", fg: "text-[hsl(var(--tag-blue-fg))]" },
+  Moonshot: { bg: "bg-[hsl(var(--tag-stone-bg))]", fg: "text-[hsl(var(--tag-stone-fg))]" },
+  default: { bg: "bg-[hsl(var(--tag-stone-bg))]", fg: "text-[hsl(var(--tag-stone-fg))]" },
+};
+
+function getVendorColor(vendor: string) {
+  return VENDOR_COLORS[vendor] || VENDOR_COLORS.default;
+}
+
+function transformLeaderboard(content: any): LeaderboardEntry[] {
+  if (!content?.leaderboard) return [];
+  return content.leaderboard.map((item: any) => {
+    const p = item.json || item;
+    return {
+      category: p.category as LeaderboardCategory,
+      rank: p.rank,
+      model: p.model,
+      vendor: p.vendor,
+      score: p.score,
+    };
+  });
+}
 
 interface TrendItem {
   id: string;
@@ -391,6 +438,158 @@ function WeeklyCta() {
   );
 }
 
+/* ── Leaderboard Section ────────────────────────── */
+function LeaderboardSection({
+  entries,
+  activeCategory,
+  onCategoryChange,
+}: {
+  entries: LeaderboardEntry[];
+  activeCategory: LeaderboardCategory;
+  onCategoryChange: (c: LeaderboardCategory) => void;
+}) {
+  const filtered = entries.filter((e) => e.category === activeCategory);
+  const hasScore = activeCategory !== "agent";
+
+  return (
+    <section className="py-16 border-t border-border">
+      {/* Section Header */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-2 bg-foreground text-background rounded-lg">
+          <Trophy className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-extrabold tracking-tighter">
+            AI Leaderboard
+          </h2>
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground mt-0.5">
+            Top models · Updated daily
+          </p>
+        </div>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="flex gap-6 sm:gap-8 border-b border-border overflow-x-auto no-scrollbar mb-0">
+        {LEADERBOARD_CATEGORIES.map((cat) => {
+          const active = activeCategory === cat.id;
+          const count = entries.filter((e) => e.category === cat.id).length;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => onCategoryChange(cat.id)}
+              className={`py-4 border-b-2 text-xs font-mono font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${
+                active
+                  ? "border-[hsl(15,80%,50%)] text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {cat.label}
+              <span className="ml-2 text-[10px] text-muted-foreground font-normal">
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Ranked List */}
+      <div className="border-l border-border">
+        {/* Header Row */}
+        <div
+          className="grid border-r border-b border-border px-6 py-3 bg-secondary/50 text-[10px] font-mono uppercase tracking-widest text-muted-foreground"
+          style={{
+            gridTemplateColumns: hasScore
+              ? "3.5rem 1fr 7rem 5rem"
+              : "3.5rem 1fr 7rem",
+          }}
+        >
+          <span>Rank</span>
+          <span>Model</span>
+          <span>Vendor</span>
+          {hasScore && <span className="text-right">Score</span>}
+        </div>
+
+        {filtered.map((entry) => {
+          const vendorColor = getVendorColor(entry.vendor);
+          const isTop3 = entry.rank <= 3;
+
+          return (
+            <div
+              key={`${entry.category}-${entry.rank}`}
+              className={`grid border-r border-b border-border px-6 py-4 transition-colors hover:bg-secondary/60 ${
+                isTop3 ? "bg-secondary/30" : ""
+              }`}
+              style={{
+                gridTemplateColumns: hasScore
+                  ? "3.5rem 1fr 7rem 5rem"
+                  : "3.5rem 1fr 7rem",
+              }}
+            >
+              {/* Rank */}
+              <div className="flex items-center">
+                {entry.rank === 1 ? (
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(45,90%,50%)] text-[hsl(45,90%,15%)] text-xs font-bold">
+                    1
+                  </span>
+                ) : entry.rank === 2 ? (
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(0,0%,75%)] text-[hsl(0,0%,25%)] text-xs font-bold">
+                    2
+                  </span>
+                ) : entry.rank === 3 ? (
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(25,60%,50%)] text-[hsl(25,60%,95%)] text-xs font-bold">
+                    3
+                  </span>
+                ) : (
+                  <span className="text-sm font-mono text-muted-foreground pl-1.5">
+                    {entry.rank}
+                  </span>
+                )}
+              </div>
+
+              {/* Model */}
+              <div className="flex items-center">
+                <span
+                  className={`text-sm font-semibold tracking-tight ${
+                    isTop3 ? "text-foreground" : ""
+                  }`}
+                >
+                  {entry.model}
+                </span>
+              </div>
+
+              {/* Vendor Tag */}
+              <div className="flex items-center">
+                <span
+                  className={`px-2 py-0.5 ${vendorColor.bg} ${vendorColor.fg} text-[10px] font-mono font-bold uppercase tracking-tighter rounded-sm`}
+                >
+                  {entry.vendor}
+                </span>
+              </div>
+
+              {/* Score */}
+              {hasScore && (
+                <div className="flex items-center justify-end">
+                  <span className="text-sm font-mono font-bold text-[hsl(15,80%,50%)]">
+                    {entry.score ?? "—"}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="py-12 text-center">
+          <p className="text-muted-foreground font-mono text-sm uppercase tracking-widest">
+            No leaderboard data available.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /* ── Sticky CTA ─────────────────────────────────── */
 function StickyCta() {
   const [email, setEmail] = useState("");
@@ -479,6 +678,7 @@ export default function Home() {
   const [cadence, setCadence] = useState<"daily" | "weekly">("daily");
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("devto");
+  const [leaderboardTab, setLeaderboardTab] = useState<LeaderboardCategory>("text");
 
   useEffect(() => {
     setLoading(true);
@@ -506,6 +706,7 @@ export default function Home() {
   }, []);
 
   const items = useMemo(() => transformContent(content), [content]);
+  const leaderboardEntries = useMemo(() => transformLeaderboard(content), [content]);
 
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
@@ -577,6 +778,14 @@ export default function Home() {
                 <TrendCard key={item.id} item={item} />
               ))}
             </div>
+          )}
+
+          {!loading && leaderboardEntries.length > 0 && (
+            <LeaderboardSection
+              entries={leaderboardEntries}
+              activeCategory={leaderboardTab}
+              onCategoryChange={setLeaderboardTab}
+            />
           )}
 
           {!loading && items.length === 0 && (

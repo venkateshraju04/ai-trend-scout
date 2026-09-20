@@ -39,9 +39,10 @@ function getSupabase() {
 }
 
 type Source = "reddit" | "github" | "hackernews" | "youtube" | "devto";
-type Filter = Source | "leaderboard";
+type Filter = "all" | Source | "leaderboard";
 
 const FILTERS: Array<{ id: Filter; label: string }> = [
+  { id: "all", label: "All" },
   { id: "devto", label: "Dev.to" },
   { id: "youtube", label: "YouTube" },
   { id: "github", label: "GitHub" },
@@ -654,7 +655,7 @@ export default function Home() {
   const [subscribeStatus, setSubscribeStatus] = useState<"success" | "error" | null>(null);
   const [cadence, setCadence] = useState<"daily" | "weekly">("daily");
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [filter, setFilter] = useState<Filter>("devto");
+  const [filter, setFilter] = useState<Filter>("all");
   const [leaderboardTab, setLeaderboardTab] = useState<LeaderboardCategory>("text");
 
   useEffect(() => {
@@ -687,15 +688,16 @@ export default function Home() {
 
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
-      reddit: 0, github: 0, youtube: 0, hackernews: 0, devto: 0, leaderboard: 0,
+      all: 0, reddit: 0, github: 0, youtube: 0, hackernews: 0, devto: 0, leaderboard: 0,
     };
     for (const it of items) base[it.source] += 1;
+    base.all = items.length;
     base.leaderboard = leaderboardEntries.length;
     return base;
   }, [items, leaderboardEntries]);
 
   const visible = useMemo(
-    () => items.filter((i) => i.source === filter),
+    () => filter === "all" ? items : items.filter((i) => i.source === filter),
     [filter, items]
   );
 
@@ -750,7 +752,33 @@ export default function Home() {
 
           {loading && <LoadingSkeleton />}
 
-          {!loading && filter !== "leaderboard" && items.length > 0 && (
+          {!loading && filter === "all" && items.length > 0 && (
+            <div>
+              {FILTERS.filter((f) => f.id !== "all" && f.id !== "leaderboard").map((f) => {
+                const sourceItems = items.filter((i) => i.source === f.id);
+                if (sourceItems.length === 0) return null;
+                return (
+                  <div key={f.id} className="mb-0">
+                    <div className="flex items-center gap-3 pt-8 pb-4 border-b border-border">
+                      <span className="text-lg font-extrabold tracking-tighter text-foreground">
+                        {f.label}
+                      </span>
+                      <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+                        {sourceItems.length} posts
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-0 border-l border-border">
+                      {sourceItems.map((item) => (
+                        <TrendCard key={item.id} item={item} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!loading && filter !== "leaderboard" && filter !== "all" && visible.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border-l border-border">
               {visible.map((item) => (
                 <TrendCard key={item.id} item={item} />

@@ -423,16 +423,16 @@ function TrendCard({ item }: { item: TrendItem }) {
   );
 }
 
-/* ── Compact Trend Card (used ONLY for "All" tab: 5 in a row, no top tags, no desc, line-clamp title) ── */
+/* ── Compact Trend Card (used ONLY for "All" tab: 5 in a row, same size as Dev.to) ── */
 function CompactTrendCard({ item }: { item: TrendItem }) {
   return (
     <a
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="border-r border-b border-border p-4 sm:p-5 group hover:bg-secondary transition-colors flex flex-col justify-between"
+      className="border-r border-b border-border p-4 sm:p-5 group hover:bg-secondary transition-colors flex flex-col justify-between min-h-[240px]"
     >
-      {item.thumbnail && (
+      {item.thumbnail ? (
         <div className="relative overflow-hidden rounded-lg mb-3">
           <img
             src={item.thumbnail}
@@ -440,14 +440,34 @@ function CompactTrendCard({ item }: { item: TrendItem }) {
             className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </div>
+      ) : (
+        item.metric && (
+          <div className="flex justify-end items-center mb-2">
+            <span className="text-xs sm:text-sm font-mono font-bold text-[hsl(15,80%,50%)] whitespace-nowrap">
+              {item.metric}
+            </span>
+          </div>
+        )
       )}
 
-      <div className="flex-1 flex flex-col justify-between">
-        <h3 className="text-sm font-bold tracking-tight mb-3 line-clamp-2 group-hover:underline decoration-[hsl(15,80%,50%)] decoration-2 underline-offset-4">
+      <div className="flex-1 flex flex-col">
+        <h3
+          className={`font-bold tracking-tight mb-2.5 group-hover:underline decoration-[hsl(15,80%,50%)] decoration-2 underline-offset-4 ${
+            item.thumbnail
+              ? "text-sm sm:text-[15px] line-clamp-2"
+              : "text-base sm:text-[17px] leading-snug line-clamp-3"
+          }`}
+        >
           {item.title}
         </h3>
 
-        <div className="mt-auto pt-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+        {!item.thumbnail && item.excerpt && (
+          <p className="text-xs sm:text-[13px] text-muted-foreground mb-3 line-clamp-3 sm:line-clamp-4 leading-relaxed">
+            {item.excerpt}
+          </p>
+        )}
+
+        <div className="mt-auto pt-2 flex items-center justify-between text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
           <span className="truncate mr-2">{item.footerLeft}</span>
           <span className="text-foreground font-bold shrink-0">{item.footerRight}</span>
         </div>

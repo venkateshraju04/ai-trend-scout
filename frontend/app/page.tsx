@@ -516,20 +516,13 @@ function LeaderboardGrid({
   return (
     <div className="border-l border-border">
       {/* Header with dropdown */}
-      <div className="border-r border-b border-border px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-foreground text-background rounded-lg">
-            <Trophy className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-xl font-extrabold tracking-tighter">
-              AI Leaderboard
-            </h2>
-            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground mt-0.5">
-              Top models · Updated daily
-            </p>
-          </div>
+      <div className="border-r border-b border-border px-6 py-5 flex items-center gap-4">
+        <div className="p-2 bg-foreground text-background rounded-lg">
+          <Trophy className="h-5 w-5" />
         </div>
+        <h2 className="text-xl font-extrabold tracking-tighter">
+          AI Leaderboard
+        </h2>
         <div className="relative">
           <select
             value={activeCategory}

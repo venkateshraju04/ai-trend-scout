@@ -380,7 +380,7 @@ function SourceTabs({
   );
 }
 
-/* ── Trend Card ─────────────────────────────────── */
+/* ── Trend Card (used for single-category tabs) ──────── */
 function TrendCard({ item }: { item: TrendItem }) {
   const tag = SOURCE_TAG[item.source];
   return (
@@ -418,6 +418,39 @@ function TrendCard({ item }: { item: TrendItem }) {
       <div className="mt-auto flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
         <span>{item.footerLeft}</span>
         <span className="text-foreground font-bold">{item.footerRight}</span>
+      </div>
+    </a>
+  );
+}
+
+/* ── Compact Trend Card (used ONLY for "All" tab: 5 in a row, no top tags, no desc, line-clamp title) ── */
+function CompactTrendCard({ item }: { item: TrendItem }) {
+  return (
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="border-r border-b border-border p-4 sm:p-5 group hover:bg-secondary transition-colors flex flex-col justify-between"
+    >
+      {item.thumbnail && (
+        <div className="relative overflow-hidden rounded-lg mb-3">
+          <img
+            src={item.thumbnail}
+            alt={item.title}
+            className="w-full h-32 object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </div>
+      )}
+
+      <div className="flex-1 flex flex-col justify-between">
+        <h3 className="text-sm font-bold tracking-tight mb-3 line-clamp-2 group-hover:underline decoration-[hsl(15,80%,50%)] decoration-2 underline-offset-4">
+          {item.title}
+        </h3>
+
+        <div className="mt-auto pt-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+          <span className="truncate mr-2">{item.footerLeft}</span>
+          <span className="text-foreground font-bold shrink-0">{item.footerRight}</span>
+        </div>
       </div>
     </a>
   );
@@ -755,12 +788,12 @@ export default function Home() {
           {!loading && filter === "all" && items.length > 0 && (
             <div>
               {FILTERS.filter((f) => f.id !== "all" && f.id !== "leaderboard").map((f) => {
-                const sourceItems = items.filter((i) => i.source === f.id);
+                const sourceItems = items.filter((i) => i.source === f.id).slice(0, 5);
                 if (sourceItems.length === 0) return null;
                 return (
                   <div key={f.id} className="mb-0">
-                    <div className="flex items-center gap-3 pt-8 pb-4 border-b border-border">
-                      <span className="text-lg font-extrabold tracking-tighter text-foreground">
+                    <div className="flex items-center gap-3 pt-10 pb-4 border-b border-border">
+                      <span className="text-2xl font-extrabold tracking-tighter text-foreground">
                         {f.label}
                       </span>
                       <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
@@ -769,12 +802,30 @@ export default function Home() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-0 border-l border-border">
                       {sourceItems.map((item) => (
-                        <TrendCard key={item.id} item={item} />
+                        <CompactTrendCard key={item.id} item={item} />
                       ))}
                     </div>
                   </div>
                 );
               })}
+
+              {leaderboardEntries.length > 0 && (
+                <div className="mb-0">
+                  <div className="flex items-center gap-3 pt-10 pb-4 border-b border-border">
+                    <span className="text-2xl font-extrabold tracking-tighter text-foreground">
+                      AI Leaderboard
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+                      {leaderboardEntries.length} models
+                    </span>
+                  </div>
+                  <LeaderboardGrid
+                    entries={leaderboardEntries}
+                    activeCategory={leaderboardTab}
+                    onCategoryChange={setLeaderboardTab}
+                  />
+                </div>
+              )}
             </div>
           )}
 

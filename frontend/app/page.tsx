@@ -25,6 +25,7 @@ import {
   Trophy,
   Crown,
   Medal,
+  ChevronDown,
 } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import { Toaster, toast } from "sonner";
@@ -38,7 +39,7 @@ function getSupabase() {
 }
 
 type Source = "reddit" | "github" | "hackernews" | "youtube" | "devto";
-type Filter = Source;
+type Filter = Source | "leaderboard";
 
 const FILTERS: Array<{ id: Filter; label: string }> = [
   { id: "devto", label: "Dev.to" },
@@ -46,6 +47,7 @@ const FILTERS: Array<{ id: Filter; label: string }> = [
   { id: "github", label: "GitHub" },
   { id: "reddit", label: "Reddit" },
   { id: "hackernews", label: "Hacker News" },
+  { id: "leaderboard", label: "AI Leaderboard" },
 ];
 
 const SOURCE_TAG: Record<Source, { bg: string; fg: string; label: string }> = {
@@ -355,17 +357,19 @@ function SourceTabs({
     <div className="flex gap-6 sm:gap-8 border-b border-border overflow-x-auto no-scrollbar">
       {FILTERS.map((f) => {
         const active = value === f.id;
+        const isLeaderboard = f.id === "leaderboard";
         return (
           <button
             key={f.id}
             onClick={() => onChange(f.id)}
-            className={`py-4 border-b-2 text-xs font-mono font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${active
+            className={`py-4 border-b-2 text-xs font-mono font-bold uppercase tracking-widest whitespace-nowrap transition-colors flex items-center gap-1.5 ${active
               ? "border-[hsl(15,80%,50%)] text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
           >
+            {isLeaderboard && <Trophy className="h-3.5 w-3.5" />}
             {f.label}
-            <span className="ml-2 text-[10px] text-muted-foreground font-normal">
+            <span className="ml-1 text-[10px] text-muted-foreground font-normal">
               {counts[f.id]}
             </span>
           </button>
@@ -438,8 +442,64 @@ function WeeklyCta() {
   );
 }
 
-/* ── Leaderboard Section ────────────────────────── */
-function LeaderboardSection({
+/* ── Leaderboard Entry Row ───────────────────────── */
+function LeaderboardRow({ entry, hasScore }: { entry: LeaderboardEntry; hasScore: boolean }) {
+  const vendorColor = getVendorColor(entry.vendor);
+  const isTop3 = entry.rank <= 3;
+
+  return (
+    <div
+      className={`flex items-center gap-3 px-4 py-3 border-b border-border transition-colors hover:bg-secondary/60 ${
+        isTop3 ? "bg-secondary/30" : ""
+      }`}
+    >
+      {/* Rank */}
+      <div className="w-8 flex-shrink-0 flex items-center justify-center">
+        {entry.rank === 1 ? (
+          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(45,90%,50%)] text-[hsl(45,90%,15%)] text-xs font-bold">
+            1
+          </span>
+        ) : entry.rank === 2 ? (
+          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(0,0%,75%)] text-[hsl(0,0%,25%)] text-xs font-bold">
+            2
+          </span>
+        ) : entry.rank === 3 ? (
+          <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(25,60%,50%)] text-[hsl(25,60%,95%)] text-xs font-bold">
+            3
+          </span>
+        ) : (
+          <span className="text-sm font-mono text-muted-foreground">
+            {entry.rank}
+          </span>
+        )}
+      </div>
+
+      {/* Model + Vendor */}
+      <div className="flex-1 min-w-0">
+        <span className={`text-sm font-semibold tracking-tight block truncate ${isTop3 ? "text-foreground" : ""}`}>
+          {entry.model}
+        </span>
+        <span
+          className={`inline-block mt-1 px-2 py-0.5 ${vendorColor.bg} ${vendorColor.fg} text-[9px] font-mono font-bold uppercase tracking-tighter rounded-sm`}
+        >
+          {entry.vendor}
+        </span>
+      </div>
+
+      {/* Score */}
+      {hasScore && (
+        <div className="flex-shrink-0">
+          <span className="text-sm font-mono font-bold text-[hsl(15,80%,50%)]">
+            {entry.score ?? "—"}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Leaderboard Grid (5 left / 5 right + dropdown) ─ */
+function LeaderboardGrid({
   entries,
   activeCategory,
   onCategoryChange,
@@ -450,143 +510,67 @@ function LeaderboardSection({
 }) {
   const filtered = entries.filter((e) => e.category === activeCategory);
   const hasScore = activeCategory !== "agent";
+  const leftCol = filtered.slice(0, 5);
+  const rightCol = filtered.slice(5, 10);
 
   return (
-    <section className="py-16 border-t border-border">
-      {/* Section Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="p-2 bg-foreground text-background rounded-lg">
-          <Trophy className="h-5 w-5" />
+    <div className="border-l border-border">
+      {/* Header with dropdown */}
+      <div className="border-r border-b border-border px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-foreground text-background rounded-lg">
+            <Trophy className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold tracking-tighter">
+              AI Leaderboard
+            </h2>
+            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground mt-0.5">
+              Top models · Updated daily
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-extrabold tracking-tighter">
-            AI Leaderboard
-          </h2>
-          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground mt-0.5">
-            Top models · Updated daily
-          </p>
+        <div className="relative">
+          <select
+            value={activeCategory}
+            onChange={(e) => onCategoryChange(e.target.value as LeaderboardCategory)}
+            className="appearance-none bg-secondary px-4 py-2 pr-9 rounded-lg text-xs font-mono font-bold uppercase tracking-widest ring-1 ring-border cursor-pointer focus:outline-none focus:ring-[hsl(15,80%,50%)] transition-shadow"
+          >
+            {LEADERBOARD_CATEGORIES.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         </div>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex gap-6 sm:gap-8 border-b border-border overflow-x-auto no-scrollbar mb-0">
-        {LEADERBOARD_CATEGORIES.map((cat) => {
-          const active = activeCategory === cat.id;
-          const count = entries.filter((e) => e.category === cat.id).length;
-          return (
-            <button
-              key={cat.id}
-              onClick={() => onCategoryChange(cat.id)}
-              className={`py-4 border-b-2 text-xs font-mono font-bold uppercase tracking-widest whitespace-nowrap transition-colors ${
-                active
-                  ? "border-[hsl(15,80%,50%)] text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {cat.label}
-              <span className="ml-2 text-[10px] text-muted-foreground font-normal">
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Ranked List */}
-      <div className="border-l border-border">
-        {/* Header Row */}
-        <div
-          className="grid border-r border-b border-border px-6 py-3 bg-secondary/50 text-[10px] font-mono uppercase tracking-widest text-muted-foreground"
-          style={{
-            gridTemplateColumns: hasScore
-              ? "3.5rem 1fr 7rem 5rem"
-              : "3.5rem 1fr 7rem",
-          }}
-        >
-          <span>Rank</span>
-          <span>Model</span>
-          <span>Vendor</span>
-          {hasScore && <span className="text-right">Score</span>}
+      {/* Two-column grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+        {/* Left column — Ranks 1-5 */}
+        <div className="border-r border-border">
+          {leftCol.map((entry) => (
+            <LeaderboardRow key={`${entry.category}-${entry.rank}`} entry={entry} hasScore={hasScore} />
+          ))}
         </div>
 
-        {filtered.map((entry) => {
-          const vendorColor = getVendorColor(entry.vendor);
-          const isTop3 = entry.rank <= 3;
-
-          return (
-            <div
-              key={`${entry.category}-${entry.rank}`}
-              className={`grid border-r border-b border-border px-6 py-4 transition-colors hover:bg-secondary/60 ${
-                isTop3 ? "bg-secondary/30" : ""
-              }`}
-              style={{
-                gridTemplateColumns: hasScore
-                  ? "3.5rem 1fr 7rem 5rem"
-                  : "3.5rem 1fr 7rem",
-              }}
-            >
-              {/* Rank */}
-              <div className="flex items-center">
-                {entry.rank === 1 ? (
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(45,90%,50%)] text-[hsl(45,90%,15%)] text-xs font-bold">
-                    1
-                  </span>
-                ) : entry.rank === 2 ? (
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(0,0%,75%)] text-[hsl(0,0%,25%)] text-xs font-bold">
-                    2
-                  </span>
-                ) : entry.rank === 3 ? (
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(25,60%,50%)] text-[hsl(25,60%,95%)] text-xs font-bold">
-                    3
-                  </span>
-                ) : (
-                  <span className="text-sm font-mono text-muted-foreground pl-1.5">
-                    {entry.rank}
-                  </span>
-                )}
-              </div>
-
-              {/* Model */}
-              <div className="flex items-center">
-                <span
-                  className={`text-sm font-semibold tracking-tight ${
-                    isTop3 ? "text-foreground" : ""
-                  }`}
-                >
-                  {entry.model}
-                </span>
-              </div>
-
-              {/* Vendor Tag */}
-              <div className="flex items-center">
-                <span
-                  className={`px-2 py-0.5 ${vendorColor.bg} ${vendorColor.fg} text-[10px] font-mono font-bold uppercase tracking-tighter rounded-sm`}
-                >
-                  {entry.vendor}
-                </span>
-              </div>
-
-              {/* Score */}
-              {hasScore && (
-                <div className="flex items-center justify-end">
-                  <span className="text-sm font-mono font-bold text-[hsl(15,80%,50%)]">
-                    {entry.score ?? "—"}
-                  </span>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {/* Right column — Ranks 6-10 */}
+        <div className="border-r border-border">
+          {rightCol.map((entry) => (
+            <LeaderboardRow key={`${entry.category}-${entry.rank}`} entry={entry} hasScore={hasScore} />
+          ))}
+        </div>
       </div>
 
       {filtered.length === 0 && (
-        <div className="py-12 text-center">
+        <div className="py-12 text-center border-r border-b border-border">
           <p className="text-muted-foreground font-mono text-sm uppercase tracking-widest">
             No leaderboard data available.
           </p>
         </div>
       )}
-    </section>
+    </div>
   );
 }
 
@@ -710,11 +694,12 @@ export default function Home() {
 
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
-      reddit: 0, github: 0, youtube: 0, hackernews: 0, devto: 0,
+      reddit: 0, github: 0, youtube: 0, hackernews: 0, devto: 0, leaderboard: 0,
     };
     for (const it of items) base[it.source] += 1;
+    base.leaderboard = leaderboardEntries.length;
     return base;
-  }, [items]);
+  }, [items, leaderboardEntries]);
 
   const visible = useMemo(
     () => items.filter((i) => i.source === filter),
@@ -772,7 +757,7 @@ export default function Home() {
 
           {loading && <LoadingSkeleton />}
 
-          {!loading && items.length > 0 && (
+          {!loading && filter !== "leaderboard" && items.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0 border-l border-border">
               {visible.map((item) => (
                 <TrendCard key={item.id} item={item} />
@@ -780,8 +765,8 @@ export default function Home() {
             </div>
           )}
 
-          {!loading && leaderboardEntries.length > 0 && (
-            <LeaderboardSection
+          {!loading && filter === "leaderboard" && (
+            <LeaderboardGrid
               entries={leaderboardEntries}
               activeCategory={leaderboardTab}
               onCategoryChange={setLeaderboardTab}
